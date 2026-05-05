@@ -11,8 +11,8 @@ export default defineConfig({
     platformProxy: { enabled: true },
   }),
   integrations: [preact({ compat: false })],
-  site: process.env.SITE_HOST || 'https://example.com',
-  base: '/blog',
+  site: process.env.SITE_HOST || 'https://blog-template.aioxsquad.ai',
+  base: process.env.SITE_BASE || '/',
   trailingSlash: 'ignore',
   // The /api/* surface is a JSON API authenticated via Bearer token, called
   // from automation scripts (no browser Origin). Astro's same-origin POST check
@@ -25,9 +25,15 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    optimizeDeps: {
+      exclude: ['preact/devtools'],
+    },
     ssr: {
       // Drizzle ORM needs to be external on workers runtime
       external: ['node:async_hooks'],
+      optimizeDeps: {
+        exclude: ['preact/devtools'],
+      },
     },
   },
 });

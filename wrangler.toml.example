@@ -29,8 +29,8 @@ binding = "ASSETS"
 # Public vars — safe to commit in your own wrangler.toml.
 [vars]
 SITE_URL = "https://example.com/blog"
-SITE_NAME = "My Blog"
-SITE_DESCRIPTION = "A blog about technology."
+SITE_NAME = "AIOX Blog Template"
+SITE_DESCRIPTION = "Template canônico de blog GEO da AIOX para Astro, Cloudflare Workers, D1 e Tailwind CSS 4."
 # BCP 47 language tag for this blog instance. ONE language per Worker (ADR-023).
 # Examples: "pt-BR", "en-US", "es-ES". Used by JSON-LD inLanguage, <html lang>,
 # reading-time WPM (PT 200, EN 250, ES 220), and the generate-article skill
@@ -44,14 +44,14 @@ SITE_LANG = "pt-BR"
 SITE_ALTERNATES = ""
 # Brand/organization name — used in CTAs and Organization JSON-LD.
 # Distinct from SITE_NAME (the publication name). Falls back to SITE_NAME if unset.
-ORG_NAME = "Acme"
-ORG_URL = "https://example.com"
+ORG_NAME = "AIOX"
+ORG_URL = "https://github.com/oalanicolas/blog-template"
 ORG_LOGO_URL = "https://example.com/logo.png"
 # Pipe-separated list of social/institutional URLs — emitted as Organization.sameAs
 # in JSON-LD. Leave empty if you have no profiles yet.
 # Ex.: "https://www.linkedin.com/company/acme|https://x.com/acme|https://github.com/acme"
 ORG_SAME_AS = ""
-ORG_DESCRIPTION = "Short description of your organization."
+ORG_DESCRIPTION = "Framework e sistema operacional para squads de IA aplicada no Sinkra Hub."
 # YouTube channel of the brand — used by the generate-article skill to
 # validate whether a YouTube link in an article points to the brand's own
 # channel. Leave empty to disallow ALL YouTube links in articles (recommended
@@ -62,7 +62,7 @@ ORG_YT_CHANNEL_ID = ""
 ORG_YT_HANDLE = ""
 DEFAULT_AUTHOR_NAME = "Author Name"
 DEFAULT_AUTHOR_SLUG = "equipe-editorial"
-DEFAULT_AUTHOR_URL = "https://example.com"
+DEFAULT_AUTHOR_URL = "https://github.com/oalanicolas/blog-template"
 DEFAULT_AUTHOR_JOB_TITLE = "Editor"
 # Pipe-separated sameAs URLs for the default author persona (LinkedIn, X, etc).
 DEFAULT_AUTHOR_SAME_AS = ""
@@ -70,8 +70,6 @@ DEFAULT_AUTHOR_BIO = "Short default author biography."
 DEFAULT_AUTHOR_AVATAR_URL = ""
 DEFAULT_AUTHOR_CREDENTIALS = ""
 DEFAULT_AUTHOR_KNOWS_ABOUT = ""
-# Fallback used in og:image / Article.image when the article doesn't provide a hero_image_url.
-DEFAULT_HERO_IMAGE_URL = "https://example.com/logo.png"
 
 # D1 database binding. Replace database_id after running `bunx wrangler d1 create blog-db`.
 [[d1_databases]]

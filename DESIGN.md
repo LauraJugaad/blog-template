@@ -234,9 +234,11 @@ Tailwind breakpoints (default): `sm:640`, `md:768`, `lg:1024`, `xl:1280`, `2xl:1
 
 ## Implementation
 
-**Stack:** Astro 6.2 + `@astrojs/cloudflare` (SSR edge) + Tailwind CSS 3 + Preact (única ilha: search) + TypeScript strict.
+**Stack:** Astro 6.2 + `@astrojs/cloudflare` (SSR edge) + Tailwind CSS 4 + `@tailwindcss/vite` + Preact (única ilha: search) + TypeScript strict.
 
-**Tailwind config:** `apps/blog-template/tailwind.config.mjs` — bindings `colors`, `fontFamily`, `spacing`, `borderRadius` apontam para CSS vars (`var(--color-primary)` etc).
+**Tailwind config:** CSS-first via `src/styles/global.css` com `@import "tailwindcss"` e `@theme inline`. Não há `tailwind.config.mjs`; os bindings `colors`, `fontFamily`, `container` e `radius` apontam para CSS vars runtime (`var(--color-primary)` etc).
+
+**DTCG export:** `tokens.dtcg.json` espelha os tokens principais em formato W3C Design Tokens para auditoria e integração futura. `src/styles/global.css` continua sendo o source of truth runtime.
 
 **shadcn:** NÃO usado neste template (decisão consciente — blog é minimal, não precisa do peso shadcn). Se um fork quiser adicionar, criar `components.json` e adotar.
 
@@ -246,7 +248,7 @@ Tailwind breakpoints (default): `sm:640`, `md:768`, `lg:1024`, `xl:1280`, `2xl:1
 |---|---|---|
 | `--color-primary` | `bg-primary text-primary border-primary` | `var(--color-primary)` |
 | `--color-foreground` | `text-foreground` | `var(--color-foreground)` |
-| `--color-muted` | `bg-muted` | `var(--color-muted)` |
+| `--color-foreground-muted` | `text-muted` | `var(--color-foreground-muted)` |
 | `--rounded-md` | `rounded-md` | `var(--rounded-md)` |
 | `--font-display` | `font-display` | `var(--font-display)` |
 

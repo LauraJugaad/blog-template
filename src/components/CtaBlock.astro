@@ -22,20 +22,20 @@ const { variant = 'soft', headline, body, href, label } = Astro.props;
 
 const containerClass =
   variant === 'strong'
-    ? 'my-10 rounded-md bg-foreground p-7 text-background'
-    : 'my-10 rounded-md border-l-4 border-primary bg-surface-muted p-6';
+    ? 'my-8 rounded-md bg-foreground p-5 text-background sm:my-10 sm:p-7'
+    : 'my-8 rounded-md border-l-4 border-primary bg-surface-muted p-5 sm:my-10 sm:p-6';
 
 const headlineClass =
   variant === 'strong'
-    ? 'mb-2 mt-0 font-prose text-2xl font-bold leading-tight text-background'
-    : 'mb-2 mt-0 font-prose text-2xl font-bold leading-tight text-foreground';
+    ? 'mb-2 mt-0 font-prose text-xl font-bold leading-tight text-background sm:text-2xl'
+    : 'mb-2 mt-0 font-prose text-xl font-bold leading-tight text-foreground sm:text-2xl';
 
 const bodyClass = variant === 'strong' ? 'mb-5 leading-7 text-background' : 'mb-5 leading-7 text-muted';
 
 const buttonClass =
   variant === 'strong'
-    ? 'inline-flex h-10 items-center rounded-full bg-background px-5 text-sm font-semibold text-foreground no-underline hover:bg-surface-soft hover:no-underline'
-    : 'inline-flex h-10 items-center rounded-full bg-foreground px-5 text-sm font-semibold text-background no-underline hover:bg-primary-muted hover:no-underline';
+    ? 'inline-flex min-h-10 items-center justify-center rounded-full bg-background px-5 py-2 text-sm font-semibold text-foreground no-underline hover:bg-surface-soft hover:no-underline'
+    : 'inline-flex min-h-10 items-center justify-center rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background no-underline hover:bg-primary-muted hover:no-underline';
 ---
 
 <aside class={containerClass} role="complementary">

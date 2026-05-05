@@ -27,7 +27,6 @@ interface SiteInfo {
   siteName: string;
   // BCP 47 language tag (e.g., "pt-BR", "en-US"). One language per blog per ADR-023.
   siteLang: string;
-  defaultHeroImageUrl: string;
   org: OrgInfo;
   defaultAuthor: AuthorInfo;
 }
@@ -67,7 +66,7 @@ export function articleJsonLd(
   resolvedAuthor?: PublicAuthor,
 ): Record<string, unknown> {
   const url = `${site.siteUrl}/${article.slug}`;
-  const image = article.hero_image_url || site.defaultHeroImageUrl;
+  const image = article.hero_image_url?.trim() || undefined;
   const wordCount = countWords(article.content);
   const tags = Array.isArray(article.tags) ? article.tags : [];
 
@@ -109,7 +108,7 @@ export function articleJsonLd(
     '@type': 'Article',
     headline: article.meta_title || article.title,
     description: article.meta_description || article.summary,
-    image,
+    ...(image ? { image } : {}),
     datePublished: article.published_at ?? article.created_at,
     dateModified: article.updated_at,
     author: authorNode,

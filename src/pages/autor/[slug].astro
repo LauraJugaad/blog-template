@@ -82,7 +82,7 @@ const authorHeaderClass = author.avatarUrl
   ogImage={author.avatarUrl || undefined}
   jsonLd={jsonLd}
 >
-  <section class="mx-auto max-w-[var(--reading-column)] px-4 py-12 sm:px-6">
+  <section class="mx-auto max-w-[var(--reading-column)] px-4 py-8 sm:px-6 sm:py-12">
     <Breadcrumb items={breadcrumbItems.map((b) => ({ name: b.name, href: b.href }))} />
 
     <header class={authorHeaderClass}>
@@ -99,7 +99,7 @@ const authorHeaderClass = author.avatarUrl
       )}
       <div>
         <p class="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-primary">Autor</p>
-        <h1 class="mb-2 mt-2 font-display text-5xl font-bold leading-none tracking-normal text-foreground">{author.name}</h1>
+        <h1 class="mb-2 mt-2 font-display text-[2.35rem] font-bold leading-[1.05] tracking-normal text-foreground sm:text-5xl">{author.name}</h1>
         {author.jobTitle && <p class="mb-3 text-sm text-muted">{author.jobTitle}</p>}
         {author.bio && <p class="max-w-2xl leading-7 text-muted">{author.bio}</p>}
         {author.sameAs.length > 0 && (

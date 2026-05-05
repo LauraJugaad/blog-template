@@ -1,4 +1,4 @@
-# Blog — Astro + Cloudflare Workers + D1
+# AIOX Blog Template — Astro + Cloudflare Workers + D1
 
 A server-rendered blog that runs entirely on the edge, optimized for both
 human readers and generative search engines (Perplexity, ChatGPT Search,
@@ -28,7 +28,7 @@ publishing — and adapts it for the AIOX/Sinkra Hub operating model:
 - **Runtime:** Cloudflare Workers (edge SSR)
 - **Framework:** [Astro 6.2](https://astro.build) (`output: 'server'`) with `@astrojs/cloudflare`
 - **Database:** Cloudflare D1 (SQLite on the edge) via Drizzle ORM
-- **UI:** Tailwind CSS 3 + Preact (single island: search)
+- **UI:** Tailwind CSS 4 + Preact (single island: search)
 - **Language:** TypeScript strict (`~/` → `src/`)
 
 ## How It Connects With AIOX
@@ -36,10 +36,16 @@ publishing — and adapts it for the AIOX/Sinkra Hub operating model:
 AIOX uses this repository as the canonical blog template for automated
 GEO-oriented content publishing inside the Sinkra Hub.
 
-In the Sinkra Hub monorepo, this repo lives at:
+In the Sinkra Hub monorepo, this template lives at:
 
 ```text
 apps/blog-template/
+```
+
+Canonical repository path:
+
+```text
+https://github.com/oalanicolas/blog-template
 ```
 
 It is not deployed directly. Instead, the Hub creates one fork per business and

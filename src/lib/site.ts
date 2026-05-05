@@ -15,7 +15,6 @@ export interface SiteConfig {
   siteLang: string;
   // Cross-language siblings of this blog, used by sitemap hreflang annotations.
   siteAlternates: SiteAlternate[];
-  defaultHeroImageUrl: string;
   org: {
     name: string;
     url: string;
@@ -71,7 +70,6 @@ export function getSiteConfig(env: Env): SiteConfig {
     siteDescription: env.SITE_DESCRIPTION,
     siteLang: env.SITE_LANG || 'pt-BR',
     siteAlternates: parseAlternates(env.SITE_ALTERNATES),
-    defaultHeroImageUrl: env.DEFAULT_HERO_IMAGE_URL || env.ORG_LOGO_URL,
     org: {
       name: env.ORG_NAME ?? env.SITE_NAME,
       url: env.ORG_URL,

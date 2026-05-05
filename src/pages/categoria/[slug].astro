@@ -94,14 +94,14 @@ const jsonLd = breadcrumbJsonLd(
   canonical={canonicalUrl}
   jsonLd={jsonLd}
 >
-  <section class="mx-auto max-w-[var(--reading-column)] px-4 py-12 sm:px-6">
+  <section class="mx-auto max-w-[var(--reading-column)] px-4 py-8 sm:px-6 sm:py-12">
     <Breadcrumb items={breadcrumbItems.map((b) => ({ name: b.name, href: b.href }))} />
 
     <header class="mb-8">
       <p class="mb-3 font-mono text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-primary">
         Categoria
       </p>
-      <h1 class="mb-3 font-display text-5xl font-bold leading-none tracking-normal text-foreground">
+      <h1 class="mb-3 font-display text-[2.35rem] font-bold leading-[1.05] tracking-normal text-foreground sm:text-5xl">
         {category.name}
       </h1>
       {category.description && <p class="max-w-xl text-lg leading-8 text-muted">{category.description}</p>}

@@ -5,6 +5,7 @@ interface Env {
   // Bindings
   DB: D1Database;
   ASSETS: Fetcher;
+  SESSION: KVNamespace;
 
   // Public vars (from wrangler.toml [vars])
   SITE_URL: string;
@@ -30,7 +31,6 @@ interface Env {
   DEFAULT_AUTHOR_CREDENTIALS: string;
   DEFAULT_AUTHOR_KNOWS_ABOUT: string;
   ORG_KNOWS_ABOUT: string;
-  DEFAULT_HERO_IMAGE_URL: string;
 
   // Secrets (from `wrangler secret put`)
   API_KEY: string;

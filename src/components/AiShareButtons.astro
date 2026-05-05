@@ -49,12 +49,12 @@ const buttons = [
 
 <aside
   aria-label="Compartilhar com assistentes de IA"
-  class="my-8 border-y border-border-hairline py-5"
+  class="my-6 border-y border-border-hairline py-5 sm:my-8"
 >
   <p class="mb-3 font-mono text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-primary">
     Resumir este artigo com IA
   </p>
-  <div class="flex flex-wrap gap-2">
+  <div class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
     {buttons.map((b) => (
       <a
         href={b.href}
@@ -62,7 +62,7 @@ const buttons = [
         rel="noopener noreferrer"
         title={b.label}
         aria-label={b.label}
-        class="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-sm font-medium text-foreground no-underline hover:bg-surface-muted hover:no-underline"
+        class="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-sm font-medium text-foreground no-underline hover:bg-surface-muted hover:no-underline sm:justify-start"
       >
         <span set:html={b.icon} />
         <span>{b.name}</span>
