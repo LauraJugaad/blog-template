@@ -6,6 +6,23 @@ Google AI Overviews). Uses a fixed **GEO (Generative Engine Optimization)**
 skeleton per article — key takeaways, numbered sections, FAQ with schema —
 so each page gives retrievers clean, citable chunks.
 
+## Origin
+
+This repository is derived from the public project
+[Techify-one/blog](https://github.com/Techify-one/blog), originally presented as
+an Astro + Cloudflare Workers + D1 blog engine for automated publishing.
+
+This fork keeps the same core thesis — a lightweight edge blog with API-based
+publishing — and adapts it for the AIOX/Sinkra Hub operating model:
+
+- Astro 6.2 + Bun-native workflow
+- one Cloudflare Worker + one D1 database per business/language fork
+- `SITE_LANG` and `SITE_ALTERNATES` for native-language GEO blogs
+- `/llms.txt` and `/llms-full.txt` for LLM ingestion
+- public `/api/health` for deployment checks
+- additive GEO signal columns for future citation monitoring
+- an editorial manifesto template for AIOX content workflows
+
 ## Stack
 
 - **Runtime:** Cloudflare Workers (edge SSR)
@@ -13,6 +30,80 @@ so each page gives retrievers clean, citable chunks.
 - **Database:** Cloudflare D1 (SQLite on the edge) via Drizzle ORM
 - **UI:** Tailwind CSS 3 + Preact (single island: search)
 - **Language:** TypeScript strict (`~/` → `src/`)
+
+## How It Connects With AIOX
+
+AIOX uses this repository as the canonical blog template for automated
+GEO-oriented content publishing inside the Sinkra Hub.
+
+In the Sinkra Hub monorepo, this repo lives at:
+
+```text
+apps/blog-template/
+```
+
+It is not deployed directly. Instead, the Hub creates one fork per business and
+language, for example:
+
+```text
+apps/blog-aiox-pt/
+apps/blog-aiox-en/
+apps/blog-allfluence-pt/
+```
+
+Each fork owns its own:
+
+- Cloudflare Worker
+- Cloudflare D1 database
+- `wrangler.toml`
+- `SITE_LANG`
+- brand variables (`ORG_NAME`, `ORG_URL`, `DEFAULT_AUTHOR_*`)
+- API secret (`API_KEY`)
+- IndexNow secret (`INDEXNOW_KEY`)
+
+The AIOX content pipeline connects to each fork through the Bearer-protected
+REST API:
+
+```text
+POST /api/articles        # create draft article
+POST /api/publish/{slug}  # publish + IndexNow + Google sitemap ping
+GET  /api/taxonomy        # categories/tags for article generation
+GET  /api/yt-transcript   # transcript extraction helper
+```
+
+The future `content-geo` squad writes and measures content using the same
+contract. It reads business context from an editorial manifesto stored in the
+Sinkra workspace:
+
+```text
+workspace/businesses/{business}/L1-strategy/editorial-manifesto.yaml
+```
+
+This repository provides the schema template at:
+
+```text
+templates/editorial-manifesto.template.yaml
+```
+
+For discovery by search engines and LLM retrievers, each deployed fork exposes:
+
+```text
+/sitemap.xml
+/robots.txt       # Allow: / by design
+/llms.txt         # compact index
+/llms-full.txt    # full published corpus
+/api/health       # public liveness/readiness check
+```
+
+Inside Sinkra Hub, new forks are created by the root-level scaffold script:
+
+```bash
+scripts/scaffold-blog-business.sh aiox pt-BR
+```
+
+That script lives outside this public template repository. If you use this repo
+standalone, copy it manually, edit `wrangler.toml.example`, and follow the setup
+below.
 
 ## Prerequisites
 
