@@ -4,10 +4,10 @@
 #   cp wrangler.toml.example wrangler.toml
 #
 # Before deploying:
-#   1. Run `wrangler d1 create blog-db` and replace database_id below.
-#   2. Run `wrangler secret put API_KEY`      (Bearer token for the API).
-#   3. Run `wrangler secret put INDEXNOW_KEY` (IndexNow key; also served at /{KEY}.txt).
-#   4. Run `npx astro build && wrangler deploy`.
+#   1. Run `bunx wrangler d1 create blog-db` and replace database_id below.
+#   2. Run `bunx wrangler secret put API_KEY`      (Bearer token for the API).
+#   3. Run `bunx wrangler secret put INDEXNOW_KEY` (IndexNow key; also served at /{KEY}.txt).
+#   4. Run `bun run deploy`.
 
 name = "blog"
 main = "./dist/_worker.js/index.js"
@@ -31,6 +31,17 @@ binding = "ASSETS"
 SITE_URL = "https://example.com/blog"
 SITE_NAME = "My Blog"
 SITE_DESCRIPTION = "A blog about technology."
+# BCP 47 language tag for this blog instance. ONE language per Worker (ADR-023).
+# Examples: "pt-BR", "en-US", "es-ES". Used by JSON-LD inLanguage, <html lang>,
+# reading-time WPM (PT 200, EN 250, ES 220), and the generate-article skill
+# (which generates native content in this language — never translates).
+SITE_LANG = "pt-BR"
+# Pipe-separated list of alternate-language siblings of THIS blog. Used to emit
+# <xhtml:link rel="alternate" hreflang="..." href="..."/> in the sitemap.
+# Format: "lang|url" pairs separated by pipe.
+# Ex.: "en-US|https://aiox.dev/blog|es-ES|https://aiox.dev/es/blog"
+# Leave empty if this is the only language for this business.
+SITE_ALTERNATES = ""
 # Brand/organization name — used in CTAs and Organization JSON-LD.
 # Distinct from SITE_NAME (the publication name). Falls back to SITE_NAME if unset.
 ORG_NAME = "Acme"
@@ -57,7 +68,7 @@ DEFAULT_AUTHOR_SAME_AS = ""
 # Fallback used in og:image / Article.image when the article doesn't provide a hero_image_url.
 DEFAULT_HERO_IMAGE_URL = "https://example.com/logo.png"
 
-# D1 database binding. Replace database_id after running `wrangler d1 create blog-db`.
+# D1 database binding. Replace database_id after running `bunx wrangler d1 create blog-db`.
 [[d1_databases]]
 binding = "DB"
 database_name = "blog-db"

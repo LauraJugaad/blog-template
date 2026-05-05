@@ -23,6 +23,8 @@ interface AuthorInfo {
 interface SiteInfo {
   siteUrl: string;
   siteName: string;
+  // BCP 47 language tag (e.g., "pt-BR", "en-US"). One language per blog per ADR-023.
+  siteLang: string;
   defaultHeroImageUrl: string;
   org: OrgInfo;
   defaultAuthor: AuthorInfo;
@@ -95,7 +97,7 @@ export function articleJsonLd(article: Article, site: SiteInfo, categoryName?: s
       '@type': 'WebPage',
       '@id': url,
     },
-    inLanguage: 'pt-BR',
+    inLanguage: site.siteLang,
     wordCount,
     speakable: {
       '@type': 'SpeakableSpecification',
@@ -144,7 +146,7 @@ export function websiteJsonLd(site: SiteInfo): Record<string, unknown> {
     '@type': 'WebSite',
     name: site.siteName,
     url: site.siteUrl,
-    inLanguage: 'pt-BR',
+    inLanguage: site.siteLang,
     potentialAction: {
       '@type': 'SearchAction',
       target: {
@@ -171,17 +173,32 @@ export function faqPageJsonLd(items: FaqItem[]): Record<string, unknown> {
   };
 }
 
-// Detecta H2s numerados no content ("Passo 1: ...", "1. ...", "Passo 1 — ...")
-// e emite schema HowTo quando há >= 3 passos. Ativa rich results de HowTo em AI Overviews.
+// Anchor prefix for HowToStep URL fragments — derived from siteLang.
+function stepAnchorPrefix(lang: string): string {
+  const l = lang.toLowerCase();
+  if (l.startsWith('en')) return 'step';
+  if (l.startsWith('es')) return 'paso';
+  return 'passo'; // pt-BR default + fallback
+}
+
+// Detecta H2s numerados e emite schema HowTo quando há >= 3 passos.
+// Suporta H2s em PT/EN/ES (e número solto sem prefixo de palavra):
+//   "Passo 1: Configure o ambiente"
+//   "Step 1 — Set up the environment"
+//   "Paso 1: Configurar el entorno"
+//   "1. Set up environment"
+// Lang-agnóstico: prefixo opcional, número 1-50 (rejeita anos), separador
+// flexível (`:`, `-`, em-dash, en-dash, ponto, ou só espaço).
 export function howToJsonLd(article: Article, site: SiteInfo): Record<string, unknown> | null {
   const url = `${site.siteUrl}/${article.slug}`;
-  const stepRegex = /<h2(?:\s+[^>]*)?>\s*(?:<[^>]+>\s*)*(?:Passo\s+)?(\d+)(?:\s*[:.\u2013\u2014\u2015\-]\s*|\s+)([^<]+?)\s*<\/h2>/gi;
+  const stepRegex = /<h2(?:\s+[^>]*)?>\s*(?:<[^>]+>\s*)*(?:(?:Passo|Paso|Step)\s+)?(\d{1,2})(?:\s*[:.–—―\-]\s*|\s+)([^<]+?)\s*<\/h2>/gi;
   const steps: { name: string; text: string; anchor?: string }[] = [];
   const seenNumbers = new Set<number>();
   let match: RegExpExecArray | null;
   while ((match = stepRegex.exec(article.content)) !== null) {
     const num = Number(match[1]);
-    if (seenNumbers.has(num)) continue;
+    // Reject 0 and step numbers > 50 — usually years or non-step numerics.
+    if (num < 1 || num > 50 || seenNumbers.has(num)) continue;
     seenNumbers.add(num);
     const name = match[2].trim();
     if (!name) continue;
@@ -189,27 +206,37 @@ export function howToJsonLd(article: Article, site: SiteInfo): Record<string, un
   }
   if (steps.length < 3) return null;
 
+  const anchor = stepAnchorPrefix(site.siteLang);
+
   return {
     '@context': 'https://schema.org',
     '@type': 'HowTo',
     name: article.meta_title || article.title,
     description: article.meta_description || article.summary,
-    inLanguage: 'pt-BR',
+    inLanguage: site.siteLang,
     totalTime: article.reading_time_min ? `PT${article.reading_time_min}M` : undefined,
     step: steps.map((s, i) => ({
       '@type': 'HowToStep',
       position: i + 1,
       name: s.name,
       text: s.text,
-      url: `${url}#passo-${i + 1}`,
+      url: `${url}#${anchor}-${i + 1}`,
     })),
   };
 }
 
-// Reading time em minutos (200 wpm), mínimo 1.
-export function computeReadingTime(content: string): number {
+// Reading time em minutos, mínimo 1. WPM varia por idioma:
+//   pt-BR/pt-PT: 200 (default)
+//   en-US/en-GB/en: 250 (anglófonos leem mais rápido por word density)
+//   es-ES/es: 220
+// Outros idiomas caem no default 200 — ajustar conforme necessidade.
+export function computeReadingTime(content: string, lang: string = 'pt-BR'): number {
   const words = countWords(content);
-  return Math.max(1, Math.round(words / 200));
+  const normalized = lang.toLowerCase();
+  let wpm = 200;
+  if (normalized.startsWith('en')) wpm = 250;
+  else if (normalized.startsWith('es')) wpm = 220;
+  return Math.max(1, Math.round(words / wpm));
 }
 
 export { countWords };

@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { desc, eq } from 'drizzle-orm';
 import { createDb } from '~/db/client';
 import { articles, categories } from '~/db/schema';
+import { getSiteConfig } from '~/lib/site';
 
 export const prerender = false;
 
@@ -16,7 +17,8 @@ function escape(str: string): string {
 
 export const GET: APIRoute = async ({ locals }) => {
   const env = locals.runtime.env;
-  const siteUrl = env.SITE_URL.replace(/\/$/, '');
+  const site = getSiteConfig(env);
+  const siteUrl = site.siteUrl;
   const db = createDb(env.DB);
 
   const [allArticles, allCategories] = await Promise.all([
@@ -70,9 +72,30 @@ export const GET: APIRoute = async ({ locals }) => {
     });
   }
 
+  // Hreflang annotations (ADR-023): emit only for the home URL, since path-level
+  // siblings across alternate-language siblings rarely match 1:1 (content is native
+  // per language, not translated). Home-level alternates are enough for Google.
+  const hreflangs = site.siteAlternates.length > 0
+    ? [{ lang: site.siteLang, url: siteUrl }, ...site.siteAlternates]
+    : [];
+  const renderHreflang = (u: { loc: string }) =>
+    u.loc === siteUrl && hreflangs.length > 0
+      ? hreflangs
+          .map(
+            (h) =>
+              `    <xhtml:link rel="alternate" hreflang="${escape(h.lang)}" href="${escape(h.url)}" />\n`,
+          )
+          .join('')
+      : '';
+
+  const urlsetAttrs =
+    hreflangs.length > 0
+      ? `xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml"`
+      : `xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"`;
+
   const xml =
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
-    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+    `<urlset ${urlsetAttrs}>\n` +
     urls
       .map(
         (u) =>
@@ -81,6 +104,7 @@ export const GET: APIRoute = async ({ locals }) => {
           `    <lastmod>${escape(u.lastmod)}</lastmod>\n` +
           `    <changefreq>${u.changefreq}</changefreq>\n` +
           `    <priority>${u.priority}</priority>\n` +
+          renderHreflang(u) +
           `  </url>`,
       )
       .join('\n') +

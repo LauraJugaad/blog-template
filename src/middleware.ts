@@ -4,6 +4,7 @@ import { url } from './lib/paths';
 
 const API_PREFIX = url('/api/');
 const SEARCH_PREFIX = url('/api/search');
+const HEALTH_PREFIX = url('/api/health');
 const LEGACY_ARTICLE_PREFIX = url('/artigos/');
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -38,7 +39,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
-  if (pathname.startsWith(API_PREFIX) && !pathname.startsWith(SEARCH_PREFIX)) {
+  // Public API routes (no Bearer required): /api/search, /api/health.
+  // Everything else under /api/ requires Bearer token.
+  const isPublicApiRoute =
+    pathname.startsWith(SEARCH_PREFIX) || pathname.startsWith(HEALTH_PREFIX);
+  if (pathname.startsWith(API_PREFIX) && !isPublicApiRoute) {
     if (!isAuthorized(context.request, env?.API_KEY)) {
       return unauthorized();
     }

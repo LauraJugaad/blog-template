@@ -1,12 +1,13 @@
 /**
- * Format an ISO 8601 date as a Brazilian Portuguese long date string.
- * Used in article meta blocks and listing cards.
+ * Format an ISO 8601 date as a long date string in the given BCP 47 locale.
+ * Used in article meta blocks and listing cards. Defaults to pt-BR for back-compat
+ * with call sites that haven't been updated to pass site.siteLang yet.
  */
-export function formatDatePtBr(iso: string | null | undefined): string {
+export function formatDate(iso: string | null | undefined, lang: string = 'pt-BR'): string {
   if (!iso) return '';
   try {
     const d = new Date(iso);
-    return new Intl.DateTimeFormat('pt-BR', {
+    return new Intl.DateTimeFormat(lang, {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
@@ -15,6 +16,12 @@ export function formatDatePtBr(iso: string | null | undefined): string {
     return '';
   }
 }
+
+/**
+ * Back-compat alias. Prefer formatDate(iso, site.siteLang).
+ * @deprecated use formatDate(iso, lang)
+ */
+export const formatDatePtBr = (iso: string | null | undefined) => formatDate(iso, 'pt-BR');
 
 /**
  * Strip all HTML tags from a string. Used for excerpt previews and meta descriptions.

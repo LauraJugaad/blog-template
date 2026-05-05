@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
 
 export const categories = sqliteTable('categories', {
   slug: text('slug').primaryKey(),
@@ -59,11 +59,19 @@ export const articles = sqliteTable(
     faq: text('faq', { mode: 'json' }).$type<FaqItem[]>(),
     reading_time_min: integer('reading_time_min'),
     aggregate_rating: text('aggregate_rating', { mode: 'json' }).$type<AggregateRating>(),
+    // GEO squad signal columns (migration 0003) — populated by content-geo
+    // squad per PRD docs/prd/prd-content-geo-squad.md v0.4.0. All NULL by
+    // default; legacy articles ignore them transparently.
+    citation_score: real('citation_score'),
+    cluster_pillar_slug: text('cluster_pillar_slug'),
+    verify_pass_rate: real('verify_pass_rate'),
+    verify_report_url: text('verify_report_url'),
   },
   (table) => [
     index('articles_status_idx').on(table.status),
     index('articles_published_at_idx').on(table.published_at),
     index('articles_category_idx').on(table.category),
+    index('articles_cluster_pillar_idx').on(table.cluster_pillar_slug),
   ],
 );
 

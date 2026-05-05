@@ -2,10 +2,19 @@
  * Aggregates publicly-safe site config exposed via wrangler.toml [vars].
  * Centralizes the env -> shape conversion so layouts/components don't read env directly.
  */
+export interface SiteAlternate {
+  lang: string;
+  url: string;
+}
+
 export interface SiteConfig {
   siteUrl: string;
   siteName: string;
   siteDescription: string;
+  // BCP 47 language tag for this blog instance (ADR-023). One language per Worker.
+  siteLang: string;
+  // Cross-language siblings of this blog, used by sitemap hreflang annotations.
+  siteAlternates: SiteAlternate[];
   defaultHeroImageUrl: string;
   org: {
     name: string;
@@ -35,11 +44,32 @@ function parsePipeList(raw: string | undefined | null): string[] {
     .filter((s) => s.length > 0);
 }
 
+// Parses pipe-separated "lang|url|lang|url..." from SITE_ALTERNATES into [{lang,url}, ...].
+// Drops malformed pairs silently rather than throwing — empty list is a valid state.
+function parseAlternates(raw: string | undefined | null): SiteAlternate[] {
+  if (!raw) return [];
+  const parts = raw
+    .split('|')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  const pairs: SiteAlternate[] = [];
+  for (let i = 0; i + 1 < parts.length; i += 2) {
+    const lang = parts[i];
+    const url = parts[i + 1];
+    if (lang && url && /^https?:\/\//.test(url)) {
+      pairs.push({ lang, url: url.replace(/\/$/, '') });
+    }
+  }
+  return pairs;
+}
+
 export function getSiteConfig(env: Env): SiteConfig {
   return {
     siteUrl: env.SITE_URL.replace(/\/$/, ''),
     siteName: env.SITE_NAME,
     siteDescription: env.SITE_DESCRIPTION,
+    siteLang: env.SITE_LANG || 'pt-BR',
+    siteAlternates: parseAlternates(env.SITE_ALTERNATES),
     defaultHeroImageUrl: env.DEFAULT_HERO_IMAGE_URL || env.ORG_LOGO_URL,
     org: {
       name: env.ORG_NAME ?? env.SITE_NAME,

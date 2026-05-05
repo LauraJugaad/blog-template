@@ -9,7 +9,7 @@ so each page gives retrievers clean, citable chunks.
 ## Stack
 
 - **Runtime:** Cloudflare Workers (edge SSR)
-- **Framework:** [Astro 5](https://astro.build) (`output: 'server'`) with `@astrojs/cloudflare`
+- **Framework:** [Astro 6.2](https://astro.build) (`output: 'server'`) with `@astrojs/cloudflare`
 - **Database:** Cloudflare D1 (SQLite on the edge) via Drizzle ORM
 - **UI:** Tailwind CSS 3 + Preact (single island: search)
 - **Language:** TypeScript strict (`~/` → `src/`)
@@ -17,68 +17,76 @@ so each page gives retrievers clean, citable chunks.
 ## Prerequisites
 
 - Node.js 20+
+- Bun 1.3+
 - A Cloudflare account with Workers + D1 enabled
-- `wrangler` CLI (installed as a dev dependency; run via `npx wrangler ...`)
+- `wrangler` CLI (installed as a dev dependency; run via `bun run ...` scripts or `bunx wrangler ...`)
 
 ## Setup
 
 ```bash
 # 1. Install deps
-npm install
+bun install
 
 # 2. Copy environment templates
 cp .env.example .env
 cp wrangler.toml.example wrangler.toml
 
 # 3. Create the D1 database and copy the UUID into wrangler.toml
-npx wrangler d1 create blog-db
+bunx wrangler d1 create blog-db
 
 # 4. Fill in .env (Cloudflare API token, account id, SITE_HOST, BLOG_KEY, INDEXNOW_KEY)
 #    Fill in wrangler.toml ([vars], routes, database_id)
 
 # 5. Run migrations + seed
-npm run db:migrate:local
-npm run db:migrate:geo:local
-npm run db:migrate:rating:local
-npm run db:seed:local
+bun run db:migrate:local
+bun run db:migrate:geo:local
+bun run db:migrate:rating:local
+bun run db:migrate:geosquad:local
+bun run db:seed:local
+# Optional for local UI smoke only:
+bun run db:seed:dev:local
 
 # 6. Set production secrets (once):
-#    wrangler secret put API_KEY
-#    wrangler secret put INDEXNOW_KEY
+#    bunx wrangler secret put API_KEY
+#    bunx wrangler secret put INDEXNOW_KEY
 ```
 
 ## Commands
 
 ```bash
-npm run dev              # Astro dev server (D1 local via platformProxy)
-npm run build            # Astro build + post-build.mjs (.assetsignore)
-npm run preview          # wrangler dev (real Worker runtime locally)
-npm run deploy           # build + wrangler deploy (production)
-npm run typecheck        # astro check
+bun run dev              # Astro dev server (D1 local via platformProxy)
+bun run build            # Astro build + post-build.mjs (.assetsignore)
+bun run preview          # wrangler dev (real Worker runtime locally)
+bun run deploy           # build + wrangler deploy (production)
+bun run typecheck        # astro check
 
-npm run db:generate           # drizzle-kit generate (schema.ts → SQL)
-npm run db:migrate:local      # initial migration on local D1
-npm run db:migrate:remote     # initial migration on remote D1
-npm run db:migrate:geo:local  # GEO fields migration (hero_image, key_takeaways, faq, reading_time)
-npm run db:migrate:geo:remote # GEO migration on remote D1
-npm run db:migrate:rating:local  # aggregate_rating migration (review/comparison schema)
-npm run db:migrate:rating:remote # aggregate_rating on remote D1
-npm run db:seed:local         # seed local (4 categories + 1 demo article)
-npm run db:seed:remote        # seed remote (production)
+bun run db:generate              # drizzle-kit generate (schema.ts → SQL)
+bun run db:migrate:local         # initial migration on local D1
+bun run db:migrate:remote        # initial migration on remote D1
+bun run db:migrate:geo:local     # GEO fields migration (hero_image, key_takeaways, faq, reading_time)
+bun run db:migrate:geo:remote    # GEO migration on remote D1
+bun run db:migrate:rating:local  # aggregate_rating migration (review/comparison schema)
+bun run db:migrate:rating:remote # aggregate_rating on remote D1
+bun run db:migrate:geosquad:local  # GEO squad signal columns
+bun run db:migrate:geosquad:remote # GEO squad signal columns on remote D1
+bun run db:seed:local            # production-safe categories only
+bun run db:seed:remote           # production-safe categories only
+bun run db:seed:dev:local        # optional demo article for local UI smoke
+bun run db:seed:dev:staging      # optional demo article for staging only; never production
 ```
 
 Load env vars before running wrangler commands:
 
 ```bash
 set -a; source .env; set +a
-npm run deploy
+bun run deploy
 ```
 
 ## Repo layout
 
 ```
 src/
-  middleware.ts          # Auth gate: Bearer token on /api/* (except /api/search)
+  middleware.ts          # Auth gate: Bearer token on /api/* (except /api/search and /api/health)
   db/schema.ts           # Drizzle schema: articles + categories
   db/client.ts           # createDb(d1) → drizzle instance
   lib/                   # Business logic (validation, slug, SEO, pings, paths)
@@ -87,13 +95,16 @@ src/
     api/articles/        # CRUD REST (index.ts = list+create, [slug].ts = get+update+delete)
     api/publish/[slug].ts# Publish: draft→published + IndexNow + Google ping
     api/search.ts        # Public LIKE search (no auth)
+    api/health.ts        # Public liveness/readiness probe (no auth, D1 ping)
     api/yt-transcript.ts # YouTube transcript extraction on the edge (Bearer)
     api/taxonomy.ts      # List categories + aggregated tags (Bearer)
     [slug].astro         # Article page (SSR, JSON-LD, breadcrumbs, related)
     categoria/[slug].astro
     index.astro          # Homepage with pagination + Preact search island
-    sitemap.xml.ts       # Dynamic sitemap (D1 query)
-    robots.txt.ts        # Blocks AI-training crawlers, allows search bots
+    sitemap.xml.ts       # Dynamic sitemap (D1 query) + hreflang via SITE_ALTERNATES
+    llms.txt.ts          # llmstxt.org index for published articles
+    llms-full.txt.ts     # llmstxt.org full-content corpus for LLM ingestion
+    robots.txt.ts        # Allow: / total (ADR-026: citation > training-protection)
     [key].txt.ts         # IndexNow key verification (dynamic, no static file)
   layouts/Base.astro     # HTML shell: meta, OG/Twitter, JSON-LD Organization+WebSite
   components/            # ArticleCard, Breadcrumb, Pagination, SearchIsland (Preact),
@@ -120,6 +131,12 @@ worker-configuration.d.ts# Env types (bindings + vars + secrets)
 - **IDs** use ULID (time-sortable, no auto-increment).
 - **IndexNow key** is served dynamically by `[key].txt.ts` — returns 404 for any
   other `*.txt` (doesn't leak that the route exists).
+- **`robots.txt` uses `Allow: /` intentionally** — this blog exists to maximize
+  search/retrieval/training exposure for GEO citation. See ADR-026 before
+  changing this behavior.
+- **`/llms-full.txt` exposes the full published corpus intentionally** — this is
+  a GEO distribution endpoint. Do not put private, gated, or sensitive content
+  in this blog.
 - **`ctx.waitUntil()`** in publish — IndexNow/Google pings run in the background
   without blocking the response.
 - **`base: '/blog'` + `trailingSlash: 'ignore'`** in `astro.config.mjs` — the blog
@@ -164,6 +181,10 @@ with `sameAs`/`jobTitle` when it is the default persona) + `BreadcrumbList` +
 DB fields added by migration `0001_geo_fields.sql`: `hero_image_url`,
 `key_takeaways`, `faq`, `reading_time_min`.
 
+DB fields added by migration `0003_geo_squad_columns.sql`: `citation_score`,
+`cluster_pillar_slug`, `verify_pass_rate`, `verify_report_url`. These are
+nullable signal fields reserved for the future `content-geo` squad.
+
 The editorial author persona and organization identity are configurable
 via `[vars]` in `wrangler.toml`: `DEFAULT_AUTHOR_NAME`, `DEFAULT_AUTHOR_URL`,
 `DEFAULT_AUTHOR_JOB_TITLE`, `DEFAULT_AUTHOR_SAME_AS`, `ORG_URL`, `ORG_LOGO_URL`,
@@ -171,7 +192,7 @@ via `[vars]` in `wrangler.toml`: `DEFAULT_AUTHOR_NAME`, `DEFAULT_AUTHOR_URL`,
 
 ## API reference
 
-All `/api/*` endpoints except `/api/search` require a Bearer token:
+All `/api/*` endpoints except `/api/search` and `/api/health` require a Bearer token:
 
 ```
 Authorization: Bearer $BLOG_KEY
@@ -188,6 +209,7 @@ Authorization: Bearer $BLOG_KEY
 | Extract YouTube transcript | GET | `/api/yt-transcript?v={id}` | Bearer |
 | List taxonomy | GET | `/api/taxonomy` | Bearer |
 | Search (public) | GET | `/api/search?q={term}` | None |
+| Health check (public) | GET | `/api/health` | None |
 
 ### Create + publish flow
 
@@ -218,7 +240,7 @@ Optional: `slug` (auto-generated from title), `category`, `tags`,
 `meta_title`, `meta_description`, `author_name`, `author_url`,
 `hero_image_url`, `key_takeaways` (string array), `faq` (`{q,a}[]`).
 
-`reading_time_min` is auto-computed (~200 wpm over `content`).
+`reading_time_min` is auto-computed from `SITE_LANG` (PT 200 wpm, EN 250 wpm, ES 220 wpm).
 
 Default categories (seeded): `ia-fundamentos`, `tutoriais`, `arquitetura`, `novidades`.
 

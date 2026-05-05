@@ -10,6 +10,11 @@ interface Env {
   SITE_URL: string;
   SITE_NAME: string;
   SITE_DESCRIPTION: string;
+  // BCP 47 language tag — one per blog instance per ADR-023.
+  // Used by JSON-LD inLanguage, <html lang>, reading-time WPM, and skill prompts.
+  SITE_LANG: string;
+  // Pipe-separated "lang|url" pairs for hreflang sitemap entries (optional).
+  SITE_ALTERNATES: string;
   ORG_NAME?: string;
   ORG_URL: string;
   ORG_LOGO_URL: string;

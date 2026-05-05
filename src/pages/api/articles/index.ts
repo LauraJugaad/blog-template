@@ -109,7 +109,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
       hero_image_url: input.hero_image_url ?? null,
       key_takeaways: input.key_takeaways ?? null,
       faq: input.faq ?? null,
-      reading_time_min: computeReadingTime(input.content),
+      reading_time_min: computeReadingTime(input.content, env.SITE_LANG),
       aggregate_rating: input.aggregate_rating ?? null,
     });
   } catch (err) {

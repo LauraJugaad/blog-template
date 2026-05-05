@@ -7,7 +7,7 @@
     "dev": "astro dev",
     "build": "astro build && node ./scripts/post-build.mjs",
     "preview": "wrangler dev",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "bun run build && wrangler deploy",
     "astro": "astro",
     "typecheck": "astro check",
     "db:generate": "drizzle-kit generate",
@@ -17,15 +17,19 @@
     "db:migrate:geo:remote": "wrangler d1 execute blog-db --remote --file=./drizzle/0001_geo_fields.sql",
     "db:migrate:rating:local": "wrangler d1 execute blog-db --local --file=./drizzle/0002_aggregate_rating.sql",
     "db:migrate:rating:remote": "wrangler d1 execute blog-db --remote --file=./drizzle/0002_aggregate_rating.sql",
+    "db:migrate:geosquad:local": "wrangler d1 execute blog-db --local --file=./drizzle/0003_geo_squad_columns.sql",
+    "db:migrate:geosquad:remote": "wrangler d1 execute blog-db --remote --file=./drizzle/0003_geo_squad_columns.sql",
     "db:seed:local": "wrangler d1 execute blog-db --local --file=./drizzle/seed.sql",
-    "db:seed:remote": "wrangler d1 execute blog-db --remote --file=./drizzle/seed.sql"
+    "db:seed:remote": "wrangler d1 execute blog-db --remote --file=./drizzle/seed.sql",
+    "db:seed:dev:local": "wrangler d1 execute blog-db --local --file=./drizzle/seed-dev.sql",
+    "db:seed:dev:staging": "wrangler d1 execute blog-db --remote --file=./drizzle/seed-dev.sql"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^12.5.0",
-    "@astrojs/preact": "^4.0.11",
+    "@astrojs/cloudflare": "^13.3.1",
+    "@astrojs/preact": "^5.1.2",
     "@astrojs/tailwind": "^6.0.2",
-    "astro": "^5.8.0",
-    "drizzle-orm": "^0.38.4",
+    "astro": "^6.2.2",
+    "drizzle-orm": "^0.45.2",
     "preact": "^10.25.4",
     "tailwindcss": "^3.4.17",
     "ulid": "^2.3.0",
@@ -33,11 +37,11 @@
     "youtubei.js": "^17.0.1"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.8",
+    "@astrojs/check": "^0.9.9",
     "@cloudflare/workers-types": "^4.20250116.0",
     "@types/node": "^22.10.5",
-    "drizzle-kit": "^0.30.2",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^5.7.3",
-    "wrangler": "^3.101.0"
+    "wrangler": "^4.0.0"
   }
 }

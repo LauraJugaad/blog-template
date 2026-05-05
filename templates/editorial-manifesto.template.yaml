@@ -1,0 +1,189 @@
+# Editorial Manifesto Template — apps/blog-template/templates/
+#
+# Schema canônico do editorial manifesto consumido pela skill `interview-founder`
+# da squad content-geo (PRD: docs/prd/prd-content-geo-squad.md FR17, AC17.3).
+#
+# Origem do design: Vish (AI Growth Agent) — palestra Imersão Vale do Silício
+# 2026-04-15 + heurísticas VS_001-015 (outputs/minds/vish_aigrowthagent/).
+#
+# Onde isto vive em PRODUÇÃO (não aqui no template):
+#
+#   workspace/businesses/{biz}/L1-strategy/editorial-manifesto.yaml
+#
+# Por business + idioma. Materializado pela skill `interview-founder` após
+# entrevista jornalística estruturada com founder/operator (15-25 perguntas).
+#
+# Quem consome:
+#   - geo-chief         — lê manifesto antes de delegar mission
+#   - geo-writer        — Phase 3.2 (Draft) — voice + guardrails + 5 ângulos
+#   - generate-article  — skill local do template (referência fallback)
+#
+# Per ADR-027 (conteúdo nativo, não tradução): cada combinação business x
+# idioma tem o SEU manifesto — manifesto AIOX-pt-BR ≠ manifesto AIOX-en-US,
+# pois ângulos, casos, vocabulário diferem por mercado.
+#
+# Schema version semver — bump em mudanças breaking.
+schema_version: "1.0.0"
+
+# Identidade da publicação
+business:
+  slug: "extraction_gap(business-slug-kebab-case)"           # ex: "aiox", "allfluence"
+  display_name: "extraction_gap(business-display-name)"      # ex: "AIOX"
+  lang: "pt-BR"                                              # BCP 47, MUST match SITE_LANG do fork
+  fork_path: "apps/blog-{business}-{shortLang}/"             # caminho do fork no monorepo
+  site_url: "extraction_gap(production-blog-url)"            # mesma URL do wrangler.toml SITE_URL
+
+# Brand voice — herdado de workspace/.../brand.yaml (CAP_08 / OQ13).
+# Aqui só override ou referenciar.
+brand_reference:
+  source: "workspace/businesses/{slug}/L0-identity/brand.yaml"
+  inherit: true                  # se true, herda valores do brand.yaml e estende abaixo
+  overrides: {}                  # override seletivo se necessário
+
+# 5 ângulos proprietários OBRIGATÓRIOS (≥3 por artigo)
+# Origem: Vish — "tese própria contrária / experiência interna /
+# dado proprietário / aplicação prática / risco-armadilha".
+# Skill `originality-gate.md` lê esta seção para validar drafts.
+proprietary_angles:
+  thesis_contrarian:
+    description: "Tese própria contrária ou complementar à fonte. Onde X tem furo, exagero, ou aplicação restrita?"
+    examples:
+      - "extraction_gap(thesis-contrarian-example-1)"
+      - "extraction_gap(thesis-contrarian-example-2)"
+    when_to_use: "extraction_gap(quando esse ângulo é forte para o business)"
+
+  internal_experience:
+    description: "Experiência interna da $ORG_NAME. Auditorias, projetos, números reais que outros não têm."
+    examples:
+      - "Em projetos da {business}, vimos que..."
+      - "Auditorias internas de N implementações mostraram..."
+    when_to_use: "Quando o business tem dado proprietário relevante"
+    fact_database_path: "workspace/businesses/{slug}/L1-strategy/internal-cases.yaml"
+
+  proprietary_data:
+    description: "Dado/comparação que a fonte não tem. Benchmark cruzado, tabela comparativa inédita, custo total calculado, breakeven, projeção."
+    examples:
+      - "extraction_gap(dado-proprietario-exemplo-1)"
+    when_to_use: "Quando o business tem expertise para gerar análise não-óbvia"
+
+  practical_application:
+    description: "Aplicação prática que a fonte não cobriu. Aterrissar tema no público da marca."
+    examples:
+      - "Como aplicar isso em PME brasileira de e-commerce"
+      - "Como medir ROI disso em time de N devs"
+    icp_lens: "Sempre conectar com ICP definido em icps[]"
+
+  risk_pitfall:
+    description: "Risco/armadilha que a fonte minimizou. 2-3 armadilhas reais (custo escondido, lock-in, falha de escala)."
+    examples:
+      - "extraction_gap(armadilha-exemplo-1)"
+    when_to_use: "Vídeos de hype omitem trade-offs — sempre listar 2-3"
+
+# ICPs — quem o business serve. Skill research-keyword (FR4) usa ICPs para
+# gerar question families (long-tail sem volume = alvo válido).
+icps:
+  - persona: "extraction_gap(icp-1-persona-name)"
+    pain_points:
+      - "extraction_gap(pain-1)"
+      - "extraction_gap(pain-2)"
+    jobs_to_be_done:
+      - "extraction_gap(jtbd-1)"
+    objections:
+      - "extraction_gap(objection-1)"
+    vocabulary_they_use:
+      - "extraction_gap(jargão-do-icp-1)"
+    where_they_search:
+      - "Google search"
+      - "ChatGPT"
+      - "extraction_gap(plataforma-específica)"
+
+# Verticais que o business cobre — define escopo editorial
+verticals:
+  - slug: "extraction_gap(vertical-1-slug)"
+    name: "extraction_gap(vertical-1-name)"
+    description: "extraction_gap(vertical-1-description)"
+    relevance_score: 100  # 0-100 — peso no editorial calendar
+
+# Tópicos PROIBIDOS — guardrails inegociáveis. Article que toca em qualquer
+# desses → abort + alerta humano.
+prohibited_topics:
+  legal_risk:
+    - "Comparação direta nominativa com concorrente (risco de difamação)"
+    - "extraction_gap(área-legal-sensível-business)"
+  brand_voice_breach:
+    - "Tom de hype/clickbait ('revolucionário', 'que vai mudar tudo')"
+    - "Promessas absolutas sem caveats"
+  out_of_scope:
+    - "extraction_gap(tópico-fora-do-foco)"
+  political:
+    - "Posicionamento político partidário"
+
+# Vocabulário canônico — terms que o business USA + terms que o business EVITA
+vocabulary:
+  preferred_terms:
+    - canonical: "extraction_gap(termo-canônico)"
+      avoid_synonyms: ["extraction_gap(sinônimo-evitar)"]
+      reason: "Diferenciação vs concorrentes / consistência de branding"
+  banned_terms:
+    - "extraction_gap(termo-banido-1)"  # ex: jargões que conotam algo errado para o ICP
+  abbreviations:
+    first_use: "expand on first occurrence"  # política padrão
+    exceptions: []                            # siglas conhecidas (AI, API, SaaS) podem ir direto
+
+# Style guide — micro-estilo do business
+style:
+  tone: "extraction_gap(tom: técnico-objetivo | conversacional | acadêmico | etc.)"
+  reading_level: "extraction_gap(grau-de-leitura-target: 8th grade | college | technical)"
+  use_first_person: true                  # "vimos", "implementamos" — true = brand-presente
+  use_questions_in_h2: true               # "Como funciona X?" vs "Funcionamento de X"
+  paragraph_max_sentences: 4
+  prefer_active_voice: true
+  examples:
+    - "Ao invés de 'pode-se observar que', dizer 'observamos que'"
+
+# Casos / cases reais para citar — backbone de 'internal_experience' angle
+reference_cases:
+  - case_id: "extraction_gap(case-1-id)"
+    title: "extraction_gap(case-1-title)"
+    summary: "extraction_gap(case-1-1-line)"
+    when_to_cite: "extraction_gap(em que tipo de artigo)"
+    facts_data_path: "workspace/businesses/{slug}/L4-operational/cases/{case-id}.yaml"
+
+# YouTube channel da marca — controle de citação de vídeo
+# Ver skill `generate-article` rule editorial inegociável: vídeo só pode ser
+# citado se ORG_YT_CHANNEL_ID for canal próprio (match exato).
+youtube:
+  org_yt_channel_id: ""    # vazio = bloqueia TODOS os links de YouTube
+  org_yt_handle: ""        # @-handle human-readable
+
+# Politicas operacionais
+publishing_policy:
+  drafts_require_human_approval: false   # se true, todo draft passa por review-draft skill
+  max_articles_per_day: 5                # alinhado com Vish ("5 artigos/dia/agente")
+  max_articles_per_month: 500            # alinhado com Vish (cap de plano enterprise)
+  default_category: "novidades"
+
+# Verify policy — alinhado com PRD NFR15 (≥95% pass rate)
+verify_policy:
+  min_pass_rate_to_publish: 95           # %; abaixo = block
+  min_pass_rate_warning: 85              # %; entre warning_min e min_to_publish = warning + revisão
+  audit_competitor_claims: true          # gate de risco legal
+
+# Citation monitoring — alinhado com PRD NFR16
+citation_monitoring:
+  platform_weights:
+    google_ai_overviews: 0.50
+    perplexity: 0.25
+    gemini: 0.15
+    chatgpt: 0.10
+  measurement_window_days: 90            # NFR14 — janela mínima
+
+# Metadados
+metadata:
+  created_at: "extraction_gap(YYYY-MM-DDTHH:MM:SSZ)"
+  created_by: "extraction_gap(@founder | @brand-chief | skill-interview-founder)"
+  source_interview_path: "outputs/squads/content-geo/manifestos/{business}/source.md"
+  last_reviewed: "extraction_gap(YYYY-MM-DD)"
+  next_review_due: "extraction_gap(YYYY-MM-DD — recomenda 90d)"
+  approver: "extraction_gap(@founder)"
+  approval_status: "draft"               # draft | approved | retired

@@ -77,7 +77,7 @@ export const PUT: APIRoute = async ({ locals, params, request }) => {
   if (input.summary !== undefined) update.summary = input.summary;
   if (input.content !== undefined) {
     update.content = input.content;
-    update.reading_time_min = computeReadingTime(input.content);
+    update.reading_time_min = computeReadingTime(input.content, env.SITE_LANG);
   }
   if (input.meta_title !== undefined) update.meta_title = input.meta_title;
   if (input.meta_description !== undefined)

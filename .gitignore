@@ -15,6 +15,10 @@ node_modules/
 *.log
 npm-debug.log*
 
+# local agent/session captures — never ship into template forks
+.synapse/
+20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]-*.txt
+
 # os
 .DS_Store
 Thumbs.db
@@ -24,9 +28,24 @@ Thumbs.db
 !.vscode/extensions.json
 .idea/
 
-# cloudflare
+# cloudflare — never commit these (contain account_id, database_id, routes,
+# secrets, and per-instance tenant config). Each fork generates its own from
+# the .example template via `cp wrangler.toml.example wrangler.toml`.
 .dev.vars
+.dev.vars.*
 wrangler.toml
+.wrangler/
+worker-configuration-local.d.ts
+
+# package-lock from npm runs (workspace is Bun-only — root bun.lock is the SOT)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# generated D1 dumps (export D1 → MDX backups go elsewhere; never commit local DB state)
+*.sqlite
+*.sqlite3
+*.db
 
 # claude code
 .claude/settings.local.json

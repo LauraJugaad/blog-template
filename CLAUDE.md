@@ -2,32 +2,67 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+# Status: Template Canônico
+
+Este diretório (`apps/blog-template/`) é o **template canônico** do Sinkra Hub
+para blogs automatizados de IA-indexação (GEO). Não é deployable por si só —
+faltam `wrangler.toml`, `.env`, `database_id` (que vivem nos forks).
+
+Para criar um fork por business × idioma, use **`scripts/scaffold-blog-business.sh`**:
+
+```bash
+scripts/scaffold-blog-business.sh aiox pt-BR
+scripts/scaffold-blog-business.sh aiox en-US
+scripts/scaffold-blog-business.sh allfluence pt-BR
+```
+
+Cada fork resultante é um Cloudflare Worker + D1 independente, com `SITE_LANG`
+pré-preenchido e identidade de marca via `wrangler.toml`. Ver:
+
+- **ADR-023** Multi-Site Per Language (1 Worker por business × idioma)
+- **ADR-024** Canonical stack (Astro 6.2 + CF Workers + D1 + Drizzle)
+- **ADR-025** Template + sync flow
+- **ADR-026** robots.txt `Allow: /` intencional (citation > training-protection)
+- **ADR-027** Conteúdo nativo (não tradução automática)
+
 ## Stack
 
 - **Runtime:** Cloudflare Workers (edge SSR)
-- **Framework:** Astro 5 (`output: 'server'`) com `@astrojs/cloudflare` adapter
+- **Framework:** Astro 6.2 (`output: 'server'`) com `@astrojs/cloudflare` adapter
 - **Database:** Cloudflare D1 (SQLite na edge) via Drizzle ORM
 - **UI:** Tailwind CSS 3 + Preact (única ilha: busca)
 - **Linguagem:** TypeScript strict (`~/` = `src/`)
+- **Package manager:** Bun (root `bun.lock` é o SOT; não usar `npm install`)
+- **Idioma:** definido per-fork via `SITE_LANG` em `wrangler.toml` (BCP 47, ex: `pt-BR`, `en-US`, `es-ES`). Nunca hardcoded em código (per ADR-023).
+
+## Tech-Debt Reconhecido
+
+- **Tailwind 3 + `@astrojs/tailwind`** é deprecated em Astro 6. Migração para Tailwind 4 + `@tailwindcss/vite` é EPIC futuro (ver ADR-024).
+- **CSP API nativa** do Astro 6 ainda não habilitada — adicionar em sprint dedicado.
+- **Built-in Fonts API** do Astro 6 ainda não usada — substitui `<link rel="preload">` manual.
 
 ## Comandos
 
 ```bash
-npm run dev              # Astro dev server (com D1 local via platformProxy)
-npm run build            # Astro build + post-build.mjs (.assetsignore)
-npm run preview          # wrangler dev (runtime real do Worker localmente)
-npm run deploy           # build + wrangler deploy (produção)
-npm run typecheck        # astro check
+bun run dev              # Astro dev server (com D1 local via platformProxy)
+bun run build            # Astro build + post-build.mjs (.assetsignore)
+bun run preview          # wrangler dev (runtime real do Worker localmente)
+bun run deploy           # build + wrangler deploy (produção)
+bun run typecheck        # astro check
 
-npm run db:generate          # drizzle-kit generate (schema.ts -> SQL)
-npm run db:migrate:local     # aplica migration inicial no D1 local
-npm run db:migrate:remote    # aplica migration inicial no D1 remoto
-npm run db:migrate:geo:local # aplica migration GEO (hero_image, key_takeaways, faq, reading_time)
-npm run db:migrate:geo:remote# aplica migration GEO no D1 remoto
-npm run db:migrate:rating:local   # aplica migration aggregate_rating (review/comparação)
-npm run db:migrate:rating:remote  # aplica migration aggregate_rating no D1 remoto
-npm run db:seed:local        # seed local (4 categorias + 1 artigo demo)
-npm run db:seed:remote       # seed remoto (produção)
+bun run db:generate              # drizzle-kit generate (schema.ts -> SQL)
+bun run db:migrate:local         # aplica migration inicial no D1 local
+bun run db:migrate:remote        # aplica migration inicial no D1 remoto
+bun run db:migrate:geo:local     # aplica migration GEO (hero_image, key_takeaways, faq, reading_time)
+bun run db:migrate:geo:remote    # aplica migration GEO no D1 remoto
+bun run db:migrate:rating:local  # aplica migration aggregate_rating (review/comparação)
+bun run db:migrate:rating:remote # aplica migration aggregate_rating no D1 remoto
+bun run db:migrate:geosquad:local  # aplica colunas de sinal da future content-geo squad
+bun run db:migrate:geosquad:remote # aplica colunas de sinal no D1 remoto
+bun run db:seed:local            # seed prod-safe: apenas categorias
+bun run db:seed:remote           # seed remoto prod-safe: apenas categorias
+bun run db:seed:dev:local        # demo article local
+bun run db:seed:dev:staging      # demo article staging only; nunca produção
 ```
 
 ## Arquitetura
@@ -43,13 +78,16 @@ src/
     api/articles/        # CRUD REST (index.ts = list+create, [slug].ts = get+update+delete)
     api/publish/[slug].ts# Publicação: draft->published + IndexNow + Google ping
     api/search.ts        # Busca pública LIKE (sem auth)
+    api/health.ts        # Health público (sem auth, ping D1)
     api/yt-transcript.ts # Extrai transcrição YouTube na edge (Bearer)
     api/taxonomy.ts      # Lista categorias + tags agregadas (Bearer)
-    artigos/[slug].astro # Página do artigo (SSR, JSON-LD, breadcrumbs, relacionados)
+    [slug].astro         # Página do artigo (SSR, JSON-LD, breadcrumbs, relacionados)
     categoria/[slug].astro
     index.astro          # Homepage com paginação + ilha de busca Preact
-    sitemap.xml.ts       # Sitemap dinâmico (D1 query)
-    robots.txt.ts        # Bloqueia crawlers de treino, permite search bots
+    sitemap.xml.ts       # Sitemap dinâmico (D1 query) + hreflang via SITE_ALTERNATES
+    llms.txt.ts          # llmstxt.org standard — index LLM-friendly de articles publicados
+    llms-full.txt.ts     # llmstxt.org full-content corpus — GEO distribution endpoint
+    robots.txt.ts        # Allow: / total (decisão por ADR-026: citation > training-protection)
     [key].txt.ts         # IndexNow key verification (dinâmico, sem arquivo estático)
   layouts/Base.astro     # HTML shell: meta, OG/Twitter, JSON-LD Organization+WebSite, article:section/tag
   components/            # ArticleCard, Breadcrumb, Pagination, SearchIsland (Preact),
@@ -74,6 +112,8 @@ worker-configuration.d.ts# Tipos do Env (bindings + vars + secrets)
 - **IndexNow key** é servida dinamicamente por `[key].txt.ts` — retorna 404 para qualquer outro `*.txt` (não vaza que a rota existe).
 - **IndexNow `keyLocation`** é passado explicitamente em `publish/[slug].ts` (`${siteUrl}/${key}.txt`) porque a key file vive em `/blog/KEY.txt`, não na raiz do host. Sem isso, IndexNow tentaria buscar `https://seudominio/KEY.txt` (404 quando há outro serviço servindo a raiz).
 - **`ctx.waitUntil()`** no publish — pings IndexNow/Google rodam em background sem bloquear a resposta.
+- **`robots.txt` é `Allow: /` total por design** — ver ADR-026 antes de mudar. Este blog existe para maximizar exposição em search, retrieval e training corpus.
+- **`/llms-full.txt` expõe corpus completo publicado por design** — não coloque conteúdo privado, gated ou sensível neste app.
 - **`base: '/blog'` + `trailingSlash: 'ignore'`** em `astro.config.mjs` — o blog é servido como subdiretório (ex.: `seudominio/blog`), não subdomínio. A combinação `base` + `trailingSlash: 'never'` quebra a rota index do Astro (404 em `/blog`), por isso usamos `ignore` e deixamos o canonical tag consolidar SEO.
 - **`src/lib/paths.ts`** centraliza `url('/slug-artigo')` → `/blog/slug-artigo`. Todos os `href`/`fetch` internos usam esse helper, incluindo o SearchIsland (Preact) no client. Se um dia mudar o base path, é uma linha só.
 - **Artigos vivem em `/blog/{slug}`** (não `/blog/artigos/{slug}`). Segmento `/artigos/` removido em 04/2026 — redundante com `/blog/` e URLs mais curtas citam mais limpo em LLMs (Perplexity, ChatGPT Search, AI Overviews). `src/middleware.ts` emite **301** em `/blog/artigos/*` → `/blog/*`. `src/lib/slug.ts` exporta `isReservedSlug()` que rejeita slugs colidindo com rotas (`categoria`, `api`, `sitemap.xml`, chave IndexNow etc.) no `POST /api/articles` e `PUT /api/articles/{slug}`.
@@ -139,7 +179,7 @@ www.seudominio.com/blog/*        → worker blog (301 → apex via middleware)
 
 - **URL:** valor de `$BLOG_URL` no `.env`
 - **D1 Database:** `blog-db` (id no seu `wrangler.toml` local, não versionado)
-- **Secrets** (configurados via `wrangler secret put`): `API_KEY`, `INDEXNOW_KEY`
+- **Secrets** (configurados via `bunx wrangler secret put`): `API_KEY`, `INDEXNOW_KEY`
 
 ### Credenciais (deploy + API)
 
@@ -162,14 +202,14 @@ Carregue antes de rodar comandos:
 
 ```bash
 set -a; source .env; set +a
-npm run deploy
+bun run deploy
 ```
 
 ## API — Referência completa
 
 ### Autenticação
 
-Todos os endpoints `/api/*` (exceto `/api/search`) exigem Bearer token:
+Todos os endpoints `/api/*` (exceto `/api/search` e `/api/health`) exigem Bearer token:
 
 ```
 Authorization: Bearer $BLOG_KEY
