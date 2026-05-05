@@ -15,26 +15,25 @@ const { items } = Astro.props;
 ---
 
 {items && items.length > 0 && (
-  <section aria-labelledby="faq-h" class="my-10 border-t border-slate-200 pt-8">
-    <h2 id="faq-h" class="text-2xl font-semibold tracking-tight mb-4">
+  <section aria-labelledby="faq-h" class="my-12 border-t border-border-hairline pt-8">
+    <h2 id="faq-h" class="mb-5 font-prose text-3xl font-bold leading-tight tracking-normal text-foreground">
       Perguntas frequentes
     </h2>
-    <div class="space-y-3">
-      {items.map((item, i) => (
+    <div class="divide-y divide-border-hairline border-y border-border-hairline">
+      {items.map((item) => (
         <details
-          class="group rounded-md border border-slate-200 bg-white open:bg-slate-50"
-          open={i === 0}
+          class="group bg-background open:bg-surface-muted"
         >
-          <summary class="cursor-pointer list-none px-4 py-3 font-medium text-slate-900 flex items-center justify-between gap-4">
+          <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-1 py-4 font-medium text-foreground">
             <span>{item.q}</span>
             <span
               aria-hidden="true"
-              class="text-slate-400 transition-transform group-open:rotate-45"
+              class="text-muted transition-transform group-open:rotate-45"
             >
               +
             </span>
           </summary>
-          <div class="px-4 pb-4 text-slate-700 leading-relaxed" set:html={item.a} />
+          <div class="px-1 pb-4 leading-7 text-muted" set:html={item.a} />
         </details>
       ))}
     </div>

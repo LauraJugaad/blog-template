@@ -20,6 +20,9 @@ interface Props {
 }
 
 const { name, url, jobTitle, bio, avatarUrl, credentials = [], sameAs = [] } = Astro.props;
+const containerClass = avatarUrl
+  ? 'grid gap-5 sm:grid-cols-[4rem_1fr_auto] sm:items-start'
+  : 'grid gap-5 sm:grid-cols-[1fr_auto] sm:items-start';
 
 // Detecta tipo de rede social pelo host para escolher rótulo acessível.
 function socialLabel(href: string): string {
@@ -38,27 +41,29 @@ function socialLabel(href: string): string {
 ---
 
 <section
-  class="mt-12 border-t border-slate-200 pt-8"
+  class="mt-12 border-y border-border-hairline py-8"
   aria-labelledby="sobre-o-autor-h"
   itemscope
   itemtype="https://schema.org/Person"
 >
-  <h2 id="sobre-o-autor-h" class="text-xl font-semibold mb-4">Sobre o autor</h2>
-  <div class="flex flex-col sm:flex-row gap-6 rounded-lg border border-slate-200 bg-slate-50 p-6">
+  <div class={containerClass}>
     {avatarUrl && (
       <img
         src={avatarUrl}
         alt={name}
-        width="96"
-        height="96"
+        width="64"
+        height="64"
         loading="lazy"
         decoding="async"
-        class="w-24 h-24 rounded-full object-cover flex-shrink-0 border border-slate-200"
+        class="h-16 w-16 rounded-full border border-border object-cover"
         itemprop="image"
       />
     )}
     <div class="flex-1 min-w-0">
-      <p class="m-0 text-lg font-semibold text-slate-900">
+      <h2 id="sobre-o-autor-h" class="m-0 font-prose text-2xl font-bold leading-tight text-foreground">
+        Sobre o autor
+      </h2>
+      <p class="mb-1 mt-2 text-lg font-semibold text-foreground">
         {url ? (
           <a href={url} itemprop="url" class="no-underline hover:underline">
             <span itemprop="name">{name}</span>
@@ -68,15 +73,15 @@ function socialLabel(href: string): string {
         )}
       </p>
       {jobTitle && (
-        <p class="mt-0 mb-2 text-sm text-slate-600" itemprop="jobTitle">{jobTitle}</p>
+        <p class="mb-3 mt-0 text-sm text-muted" itemprop="jobTitle">{jobTitle}</p>
       )}
       {bio && (
-        <p class="my-2 text-slate-700 leading-relaxed" itemprop="description">{bio}</p>
+        <p class="my-2 leading-7 text-muted" itemprop="description">{bio}</p>
       )}
       {credentials.length > 0 && (
         <ul class="mt-3 space-y-1 pl-0 list-none">
           {credentials.map((c) => (
-            <li class="text-sm text-slate-700 pl-6 relative before:content-['✓'] before:absolute before:left-0 before:text-blue-600 before:font-bold">
+            <li class="relative pl-5 text-sm text-muted before:absolute before:left-0 before:font-bold before:text-primary before:content-['✓']">
               {c}
             </li>
           ))}
@@ -90,7 +95,7 @@ function socialLabel(href: string): string {
               rel="me noopener"
               target="_blank"
               itemprop="sameAs"
-              class="text-blue-700 hover:underline"
+              class="text-primary hover:underline"
             >
               {socialLabel(href)}
             </a>
@@ -98,5 +103,13 @@ function socialLabel(href: string): string {
         </p>
       )}
     </div>
+    {url && (
+      <a
+        href={url}
+        class="inline-flex h-10 items-center justify-center rounded-full bg-foreground px-5 text-sm font-semibold text-background no-underline hover:bg-primary-muted hover:no-underline"
+      >
+        Seguir
+      </a>
+    )}
   </div>
 </section>

@@ -1,0 +1,135 @@
+---
+import Base from '~/layouts/Base.astro';
+import Breadcrumb from '~/components/Breadcrumb.astro';
+import ArticleCard from '~/components/ArticleCard.astro';
+import Pagination from '~/components/Pagination.astro';
+import { createDb } from '~/db/client';
+import { articles, authors } from '~/db/schema';
+import { and, desc, eq, or, sql } from 'drizzle-orm';
+import { getSiteConfig } from '~/lib/site';
+import { breadcrumbJsonLd, profilePageJsonLd } from '~/lib/structured-data';
+import { publicAuthorFromDb } from '~/lib/authors';
+import { url } from '~/lib/paths';
+import { parsePage, parsePageSize } from '~/lib/pagination';
+import { env } from '~/lib/runtime-env';
+
+export const prerender = false;
+
+const site = getSiteConfig(env);
+const db = createDb(env.DB);
+
+const slug = Astro.params.slug;
+if (!slug) return new Response('Not Found', { status: 404 });
+
+const authorRows = await db
+  .select()
+  .from(authors)
+  .where(and(eq(authors.slug, slug), eq(authors.status, 'active')))
+  .limit(1);
+
+if (authorRows.length === 0) return new Response('Not Found', { status: 404 });
+const authorRow = authorRows[0]!;
+const author = publicAuthorFromDb(authorRow, site);
+
+const limit = parsePageSize(Astro.url.searchParams.get('limit'));
+const page = parsePage(Astro.url.searchParams.get('page'));
+const offset = (page - 1) * limit;
+const where = and(
+  eq(articles.status, 'published'),
+  or(eq(articles.author_slug, authorRow.slug), eq(articles.author_name, authorRow.name)),
+);
+
+const [items, totalRow] = await Promise.all([
+  db
+    .select({
+      slug: articles.slug,
+      title: articles.title,
+      summary: articles.summary,
+      category: articles.category,
+      published_at: articles.published_at,
+      author_slug: articles.author_slug,
+      author_name: articles.author_name,
+      hero_image_url: articles.hero_image_url,
+      reading_time_min: articles.reading_time_min,
+    })
+    .from(articles)
+    .where(where)
+    .orderBy(desc(articles.published_at))
+    .limit(limit)
+    .offset(offset),
+  db.select({ count: sql<number>`count(*)` }).from(articles).where(where),
+]);
+const total = totalRow[0]?.count ?? 0;
+
+const canonicalUrl = `${site.siteUrl}/autor/${authorRow.slug}`;
+const breadcrumbItems = [
+  { name: 'Início', href: site.siteUrl },
+  { name: author.name },
+];
+const jsonLd = [
+  profilePageJsonLd(author, site),
+  breadcrumbJsonLd(breadcrumbItems.map((item) => ({ name: item.name, url: item.href }))),
+];
+const authorHeaderClass = author.avatarUrl
+  ? 'mb-10 grid gap-6 border-b border-border-hairline pb-8 sm:grid-cols-[7rem_1fr]'
+  : 'mb-10 border-b border-border-hairline pb-8';
+---
+
+<Base
+  title={`${author.name} — ${site.siteName}`}
+  description={author.shortBio || author.bio || `Artigos de ${author.name}`}
+  canonical={canonicalUrl}
+  ogImage={author.avatarUrl || undefined}
+  jsonLd={jsonLd}
+>
+  <section class="mx-auto max-w-[var(--reading-column)] px-4 py-12 sm:px-6">
+    <Breadcrumb items={breadcrumbItems.map((b) => ({ name: b.name, href: b.href }))} />
+
+    <header class={authorHeaderClass}>
+      {author.avatarUrl && (
+        <img
+          src={author.avatarUrl}
+          alt={author.name}
+          width="112"
+          height="112"
+          loading="eager"
+          decoding="async"
+          class="h-28 w-28 rounded-full border border-border object-cover"
+        />
+      )}
+      <div>
+        <p class="font-mono text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-primary">Autor</p>
+        <h1 class="mb-2 mt-2 font-display text-5xl font-bold leading-none tracking-normal text-foreground">{author.name}</h1>
+        {author.jobTitle && <p class="mb-3 text-sm text-muted">{author.jobTitle}</p>}
+        {author.bio && <p class="max-w-2xl leading-7 text-muted">{author.bio}</p>}
+        {author.sameAs.length > 0 && (
+          <div class="mt-4 flex flex-wrap gap-3 text-sm">
+            {author.sameAs.map((href) => (
+              <a href={href} rel="me noopener" target="_blank" class="text-primary">{new URL(href).hostname.replace(/^www\./, '')}</a>
+            ))}
+          </div>
+        )}
+      </div>
+    </header>
+
+    <div class="mb-4 flex items-center justify-between gap-4">
+      <h2 class="font-prose text-2xl font-bold text-foreground">Artigos</h2>
+      <span class="text-sm text-muted">{total} artigos</span>
+    </div>
+
+    {items.length === 0 ? (
+      <p class="py-10 text-muted">Nenhum artigo publicado por este autor ainda.</p>
+    ) : (
+      <div>
+        {items.map((article) => <ArticleCard article={article} author={author} />)}
+      </div>
+    )}
+
+    <Pagination
+      page={page}
+      total={total}
+      limit={limit}
+      basePath={url(`/autor/${authorRow.slug}`)}
+    />
+  </section>
+</Base>

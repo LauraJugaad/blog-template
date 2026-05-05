@@ -2,7 +2,7 @@
 import { defineConfig } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
 import preact from '@astrojs/preact';
-import tailwind from '@astrojs/tailwind';
+import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
@@ -10,10 +10,7 @@ export default defineConfig({
   adapter: cloudflare({
     platformProxy: { enabled: true },
   }),
-  integrations: [
-    preact({ compat: false }),
-    tailwind({ applyBaseStyles: false }),
-  ],
+  integrations: [preact({ compat: false })],
   site: process.env.SITE_HOST || 'https://example.com',
   base: '/blog',
   trailingSlash: 'ignore',
@@ -27,6 +24,7 @@ export default defineConfig({
     inlineStylesheets: 'auto',
   },
   vite: {
+    plugins: [tailwindcss()],
     ssr: {
       // Drizzle ORM needs to be external on workers runtime
       external: ['node:async_hooks'],

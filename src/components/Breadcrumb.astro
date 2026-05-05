@@ -11,16 +11,16 @@ interface Props {
 const { items } = Astro.props;
 ---
 
-<nav aria-label="Breadcrumb" class="text-sm text-slate-600 mb-4">
-  <ol class="flex flex-wrap items-center gap-1">
+<nav aria-label="Breadcrumb" class="mb-6 font-ui text-sm text-muted">
+  <ol class="flex flex-wrap items-center gap-2">
     {
       items.map((item, idx) => (
-        <li class="flex items-center gap-1">
-          {idx > 0 && <span aria-hidden="true">/</span>}
+        <li class="flex items-center gap-2">
+          {idx > 0 && <span aria-hidden="true" class="text-border">›</span>}
           {item.href ? (
-            <a href={item.href}>{item.name}</a>
+            <a href={item.href} class="no-underline hover:text-foreground hover:no-underline">{item.name}</a>
           ) : (
-            <span aria-current="page" class="text-slate-900">
+            <span aria-current="page" class="text-foreground">
               {item.name}
             </span>
           )}

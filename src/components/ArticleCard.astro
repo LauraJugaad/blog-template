@@ -2,40 +2,110 @@
 import { formatDate } from '~/lib/format';
 import { url } from '~/lib/paths';
 import { getSiteConfig } from '~/lib/site';
+import { env } from '~/lib/runtime-env';
 import type { Article } from '~/db/schema';
+import type { PublicAuthor } from '~/lib/authors';
+import { authorHref } from '~/lib/authors';
 
 interface Props {
   article: Pick<
     Article,
-    'slug' | 'title' | 'summary' | 'category' | 'published_at' | 'author_name'
+    | 'slug'
+    | 'title'
+    | 'summary'
+    | 'category'
+    | 'published_at'
+    | 'author_slug'
+    | 'author_name'
+    | 'hero_image_url'
+    | 'reading_time_min'
   >;
+  author?: PublicAuthor;
 }
 
-const { article } = Astro.props;
-const env = Astro.locals.runtime.env;
-const lang = getSiteConfig(env).siteLang;
+const { article, author } = Astro.props;
+const site = getSiteConfig(env);
+const lang = site.siteLang;
+const bylineName = author?.name ?? article.author_name;
+const bylineHref = author ? authorHref(author) : undefined;
+const articleUrl = url(`/${article.slug}`);
+const heroImage = article.hero_image_url || site.defaultHeroImageUrl;
 ---
 
-<article class="border-b border-slate-200 py-6 last:border-b-0">
-  <h2 class="text-xl font-semibold tracking-tight mb-1">
-    <a href={url(`/${article.slug}`)} class="text-slate-900 no-underline hover:text-blue-700">
-      {article.title}
-    </a>
-  </h2>
-  <p class="text-slate-700 mb-2">{article.summary}</p>
-  <div class="text-xs text-slate-500 flex flex-wrap gap-3">
-    {
-      article.category && (
-        <a href={url(`/categoria/${article.category}`)} class="uppercase tracking-wide">
+<article class="grid gap-5 border-b border-border-hairline py-8 last:border-b-0 md:grid-cols-[minmax(0,1fr)_12rem] md:gap-7">
+  <div class="min-w-0">
+    <div class="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+      {bylineHref ? (
+        <a href={bylineHref} rel="author" class="font-medium text-foreground no-underline hover:no-underline">
+          {bylineName}
+        </a>
+      ) : (
+        <span class="font-medium text-foreground">{bylineName}</span>
+      )}
+      {article.published_at && (
+        <>
+          <span aria-hidden="true">·</span>
+          <time datetime={article.published_at}>{formatDate(article.published_at, lang)}</time>
+        </>
+      )}
+    </div>
+
+    <h2 class="mb-2 font-prose text-2xl font-bold leading-tight tracking-normal text-foreground">
+      <a href={articleUrl} class="text-foreground no-underline hover:text-primary-muted hover:no-underline">
+        {article.title}
+      </a>
+    </h2>
+
+    <p class="mb-4 line-clamp-2 text-[0.98rem] leading-7 text-muted">{article.summary}</p>
+
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted">
+      {article.category && (
+        <a
+          href={url(`/categoria/${article.category}`)}
+          class="rounded-full bg-surface-muted px-3 py-1 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-primary no-underline hover:bg-primary-soft hover:no-underline"
+        >
           {article.category}
         </a>
-      )
-    }
-    {
-      article.published_at && (
-        <time datetime={article.published_at}>{formatDate(article.published_at, lang)}</time>
-      )
-    }
-    <span>{article.author_name}</span>
+      )}
+      {article.reading_time_min && article.reading_time_min > 0 && (
+        <span>{article.reading_time_min} min de leitura</span>
+      )}
+      <span class="flex-1"></span>
+      <a
+        href={articleUrl}
+        class="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted no-underline hover:bg-surface-muted hover:text-foreground hover:no-underline"
+        aria-label={`Ler ${article.title}`}
+        title="Ler artigo"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M5 12h14" />
+          <path d="m12 5 7 7-7 7" />
+        </svg>
+      </a>
+    </div>
   </div>
+
+  {heroImage && (
+    <a href={articleUrl} class="order-first block overflow-hidden rounded-md bg-surface-muted no-underline md:order-none" aria-hidden="true" tabindex="-1">
+      <img
+        src={heroImage}
+        alt=""
+        width="384"
+        height="240"
+        loading="lazy"
+        decoding="async"
+        class="aspect-[16/10] h-full w-full object-cover transition-transform duration-200 hover:scale-[1.02]"
+      />
+    </a>
+  )}
 </article>

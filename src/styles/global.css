@@ -1,152 +1,244 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
+/* ─────────────────────────────────────────────────────────────────────────
+   :root tokens — overridable per fork.
+   Values intentionally kept here (not in @theme) so a fork can ship a
+   simple <style> block at runtime overriding --color-primary, --font-prose,
+   etc., without rebuilding Tailwind. The @theme inline block below binds
+   those vars to utility classes (bg-primary, font-prose, max-w-reading…).
+   ───────────────────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+
+  --color-foreground: #242424;
+  --color-foreground-muted: #6b6b6b;
+  --color-background: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f9f9f9;
+  --color-surface-soft: #f5f5f5;
+  --color-border: #e6e6e6;
+  --color-border-hairline: #f2f2f2;
+  --color-primary: #242424;
+  --color-primary-muted: #4b5563;
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  --color-primary-contrast: #ffffff;
+  --color-warning: #9a6700;
+  --color-warning-soft: #fff7d6;
+
+  --font-display: "Source Serif 4", Charter, Georgia, serif;
+  --font-prose: "Source Serif 4", Charter, Georgia, serif;
+  --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --reading-column: 45rem;
+  --layout-max: 72rem;
+  --rounded-pill: 9999px;
+  --rounded-md: 0.5rem;
+  --rounded-sm: 0.25rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   @theme inline — bind :root vars to utility classes.
+   The `inline` keyword tells Tailwind to keep the var() reference at runtime
+   (instead of baking the value at build time), which is what makes fork
+   override actually work. Without `inline`, fork rebrand requires rebuild.
+   ───────────────────────────────────────────────────────────────────────── */
+@theme inline {
+  --color-foreground: var(--color-foreground);
+  --color-muted: var(--color-foreground-muted);
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-surface-soft: var(--color-surface-soft);
+  --color-border: var(--color-border);
+  --color-border-hairline: var(--color-border-hairline);
+  --color-primary: var(--color-primary);
+  --color-primary-muted: var(--color-primary-muted);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-primary-contrast: var(--color-primary-contrast);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+
+  --font-display: var(--font-display);
+  --font-prose: var(--font-prose);
+  --font-ui: var(--font-ui);
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-mono);
+
+  --container-reading: var(--reading-column);
+  --container-layout: var(--layout-max);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Base styles
+   ───────────────────────────────────────────────────────────────────────── */
 @layer base {
-  :root {
-    color-scheme: light dark;
-  }
-
   html {
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
-    font-feature-settings: 'cv11', 'ss01';
+    font-feature-settings: "cv11", "ss01";
   }
 
   body {
-    @apply bg-white text-slate-900 antialiased;
+    @apply bg-background text-foreground font-ui antialiased;
+  }
+
+  img {
+    @apply block max-w-full;
   }
 
   a {
-    @apply text-blue-700 underline-offset-4 hover:underline;
+    @apply text-primary underline-offset-4 hover:underline;
   }
 
-  article h1 {
-    @apply text-4xl font-bold tracking-tight mt-0 mb-4;
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
   }
 
-  article h2 {
-    @apply text-2xl font-semibold tracking-tight mt-10 mb-3;
+  ::selection {
+    background: var(--color-primary-soft);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Components
+   ───────────────────────────────────────────────────────────────────────── */
+@layer components {
+  .skip-link {
+    @apply absolute left-3 top-3 z-[100] -translate-y-20 rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background no-underline transition-transform focus:translate-y-0;
   }
 
-  article h3 {
-    @apply text-xl font-semibold tracking-tight mt-8 mb-2;
+  .content {
+    @apply font-prose text-[1.25rem] leading-[1.6] text-foreground;
   }
 
-  article p {
-    @apply my-4 leading-7;
+  .content h2 {
+    @apply mb-4 mt-14 scroll-mt-24 font-prose text-[1.75rem] font-bold leading-tight tracking-normal text-foreground;
   }
 
-  article ul,
-  article ol {
-    @apply my-4 pl-6;
+  .content h3 {
+    @apply mb-3 mt-10 scroll-mt-24 font-ui text-xl font-semibold tracking-normal text-foreground;
   }
 
-  article ul {
+  .content p {
+    @apply my-5;
+  }
+
+  .content ul,
+  .content ol {
+    @apply my-5 pl-7;
+  }
+
+  .content ul {
     @apply list-disc;
   }
 
-  article ol {
+  .content ol {
     @apply list-decimal;
   }
 
-  article li {
-    @apply my-1;
+  .content li {
+    @apply my-2 pl-1;
   }
 
-  article blockquote {
-    @apply border-l-4 border-slate-300 pl-4 italic text-slate-700 my-4;
+  .content blockquote {
+    @apply my-8 border-l-4 border-foreground pl-7 font-prose text-[1.35rem] leading-[1.55] text-foreground;
   }
 
-  article code {
-    @apply bg-slate-100 px-1 py-0.5 rounded text-sm font-mono;
+  .content code {
+    @apply rounded-sm bg-surface-soft px-1.5 py-0.5 font-mono text-[0.9em];
   }
 
-  article pre {
-    @apply bg-slate-900 text-slate-100 p-4 rounded-md overflow-x-auto my-4 text-sm;
+  .content pre {
+    @apply my-7 overflow-x-auto rounded-md bg-foreground p-4 font-mono text-sm text-background;
   }
 
-  article pre code {
+  .content pre code {
     @apply bg-transparent p-0 text-inherit;
   }
 
-  article table {
-    @apply w-full border-collapse my-6 text-sm;
+  .content table {
+    @apply my-8 w-full border-collapse font-ui text-sm;
   }
 
-  article th,
-  article td {
-    @apply border border-slate-300 px-3 py-2 text-left;
+  .content th,
+  .content td {
+    @apply border border-border px-3 py-2 text-left;
   }
 
-  article th {
-    @apply bg-slate-100 font-semibold;
+  .content th {
+    @apply bg-surface-muted font-semibold;
   }
 
-  /* ── GEO/AEO inline blocks (usados dentro do HTML do articles.content) ── */
-
-  /* CTA distribuído no corpo do artigo */
+  /* GEO/AEO inline blocks used inside articles.content. */
   .content .cta-inline {
-    @apply my-8 p-6 rounded-md border-l-4 border-amber-500 bg-amber-50;
+    @apply my-10 rounded-md border-l-4 border-warning bg-warning-soft p-6 font-ui;
   }
+
   .content .cta-inline h3 {
-    @apply mt-0 mb-2 text-lg font-semibold;
+    @apply mb-2 mt-0 text-lg font-semibold;
   }
+
   .content .cta-inline p {
-    @apply my-2;
+    @apply my-2 text-base leading-7;
   }
+
   .content .cta-inline a {
-    @apply inline-block mt-2 px-4 py-2 rounded-md bg-blue-600 text-white font-semibold no-underline hover:bg-blue-700 hover:no-underline;
+    @apply mt-3 inline-flex rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background no-underline hover:bg-primary-muted hover:no-underline;
   }
 
-  /* Case study box — métrica concreta + descrição */
   .content .case-study {
-    @apply my-8 p-6 rounded-lg border-2 border-slate-200 bg-white;
-  }
-  .content .case-study .label {
-    @apply block uppercase text-xs tracking-widest text-slate-500 font-bold mb-2;
-  }
-  .content .case-study .metric {
-    @apply text-3xl font-extrabold text-blue-600 leading-tight my-2;
+    @apply my-10 rounded-md border border-border bg-surface p-6 font-ui;
   }
 
-  /* Stat callout — número quantificado destacado inline no parágrafo.
-     Flui com o texto: não quebra linha nem cria caixa flutuante. */
-  .content .stat-callout {
-    @apply bg-blue-50 rounded px-1.5 py-0.5;
+  .content .case-study .label {
+    @apply mb-2 block font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted;
+  }
+
+  .content .case-study .metric {
+    @apply my-2 font-prose text-4xl font-bold leading-none text-primary;
+  }
+
+  .content .stat-callout,
+  .content .md-highlight {
+    background: var(--color-primary-soft);
+    border-radius: var(--rounded-sm);
     box-decoration-break: clone;
     -webkit-box-decoration-break: clone;
+    padding: 0.05em 0.2em;
   }
+
   .content .stat-callout strong {
-    @apply text-blue-600 font-bold;
+    @apply font-bold text-primary;
   }
 
-  /* Variante em bloco — use quando quiser o destaque grande tipo card,
-     fora de parágrafo: <aside class="stat-callout-block">. */
   .content .stat-callout-block {
-    @apply block px-4 py-3 my-4 rounded-md bg-blue-50 border-l-4 border-blue-500;
-  }
-  .content .stat-callout-block strong {
-    @apply block text-3xl text-blue-600 leading-none font-bold mb-1;
+    @apply my-6 block rounded-md border-l-4 border-primary bg-surface-muted px-5 py-4 font-ui;
   }
 
-  /* Tabela de comparação — ganha header azul */
+  .content .stat-callout-block strong {
+    @apply mb-1 block font-prose text-4xl font-bold leading-none text-primary;
+  }
+
   .content table.comparison thead {
-    @apply bg-blue-100;
+    @apply bg-surface-muted;
   }
+
   .content table.comparison tbody tr:nth-child(even) {
-    @apply bg-slate-50;
+    @apply bg-surface-muted;
   }
+
   .content table.comparison tbody td:first-child {
     @apply font-semibold;
   }
 
-  /* Urgency note — parágrafo de urgência suave */
   .content .urgency-note {
-    @apply italic text-amber-700 pl-6 relative;
+    @apply relative pl-6 font-ui italic text-warning;
   }
+
   .content .urgency-note::before {
-    content: "⚠";
-    @apply absolute left-0 top-0;
+    content: "!";
+    @apply absolute left-0 top-0 font-bold;
   }
 }

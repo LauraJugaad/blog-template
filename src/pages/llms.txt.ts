@@ -1,8 +1,10 @@
 import type { APIRoute } from 'astro';
+import { env } from '~/lib/runtime-env';
 import { desc, eq } from 'drizzle-orm';
 import { createDb } from '~/db/client';
-import { articles } from '~/db/schema';
+import { articles, authors } from '~/db/schema';
 import { getSiteConfig } from '~/lib/site';
+import { publicAuthorFromDb, resolveArticleAuthor } from '~/lib/authors';
 
 export const prerender = false;
 
@@ -22,23 +24,29 @@ export const prerender = false;
  * Cache: 1h (3600s). Articles change infrequently enough that stale
  * data for an hour is acceptable; LLM crawlers tolerate this well.
  */
-export const GET: APIRoute = async ({ locals }) => {
-  const env = locals.runtime.env;
+export const GET: APIRoute = async () => {
   const site = getSiteConfig(env);
   const db = createDb(env.DB);
 
-  const published = await db
-    .select({
-      slug: articles.slug,
-      title: articles.title,
-      summary: articles.summary,
-      meta_description: articles.meta_description,
-      category: articles.category,
-      published_at: articles.published_at,
-    })
-    .from(articles)
-    .where(eq(articles.status, 'published'))
-    .orderBy(desc(articles.published_at));
+  const [published, authorRows] = await Promise.all([
+    db
+      .select({
+        slug: articles.slug,
+        title: articles.title,
+        summary: articles.summary,
+        meta_description: articles.meta_description,
+        category: articles.category,
+        published_at: articles.published_at,
+        author_slug: articles.author_slug,
+        author_name: articles.author_name,
+        author_url: articles.author_url,
+      })
+      .from(articles)
+      .where(eq(articles.status, 'published'))
+      .orderBy(desc(articles.published_at)),
+    db.select().from(authors).where(eq(authors.status, 'active')),
+  ]);
+  const authorRowsBySlug = new Map(authorRows.map((author) => [author.slug, author]));
 
   // Group by category for cleaner navigation.
   const byCategory = new Map<string, typeof published>();
@@ -70,6 +78,16 @@ export const GET: APIRoute = async ({ locals }) => {
   }
   lines.push('');
 
+  if (authorRows.length > 0) {
+    lines.push('## Authors');
+    lines.push('');
+    for (const row of authorRows) {
+      const author = publicAuthorFromDb(row, site);
+      lines.push(`- [${escapeMd(author.name)}](${author.profileUrl}): ${escapeMd(author.shortBio || author.jobTitle || 'Author')}`);
+    }
+    lines.push('');
+  }
+
   // Articles grouped by category. Spec encourages H2 section per topic.
   if (published.length === 0) {
     lines.push('## Articles');
@@ -82,7 +100,12 @@ export const GET: APIRoute = async ({ locals }) => {
       for (const a of list) {
         const url = `${site.siteUrl}/${a.slug}`;
         const summary = (a.meta_description || a.summary || '').slice(0, 200);
-        lines.push(`- [${escapeMd(a.title)}](${url}): ${escapeMd(summary)}`);
+        const author = resolveArticleAuthor(
+          a,
+          a.author_slug ? authorRowsBySlug.get(a.author_slug) : null,
+          site,
+        );
+        lines.push(`- [${escapeMd(a.title)}](${url}): ${escapeMd(summary)} Author: ${escapeMd(author.name)}`);
       }
       lines.push('');
     }

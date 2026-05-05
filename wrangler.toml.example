@@ -61,10 +61,15 @@ ORG_DESCRIPTION = "Short description of your organization."
 ORG_YT_CHANNEL_ID = ""
 ORG_YT_HANDLE = ""
 DEFAULT_AUTHOR_NAME = "Author Name"
+DEFAULT_AUTHOR_SLUG = "equipe-editorial"
 DEFAULT_AUTHOR_URL = "https://example.com"
 DEFAULT_AUTHOR_JOB_TITLE = "Editor"
 # Pipe-separated sameAs URLs for the default author persona (LinkedIn, X, etc).
 DEFAULT_AUTHOR_SAME_AS = ""
+DEFAULT_AUTHOR_BIO = "Short default author biography."
+DEFAULT_AUTHOR_AVATAR_URL = ""
+DEFAULT_AUTHOR_CREDENTIALS = ""
+DEFAULT_AUTHOR_KNOWS_ABOUT = ""
 # Fallback used in og:image / Article.image when the article doesn't provide a hero_image_url.
 DEFAULT_HERO_IMAGE_URL = "https://example.com/logo.png"
 

@@ -13,6 +13,7 @@ export interface ArticleCreateInput {
   meta_description?: string;
   category?: string;
   tags?: string[];
+  author_slug?: string;
   author_name?: string;
   author_url?: string;
   slug?: string;
@@ -30,6 +31,7 @@ export interface ArticleUpdateInput {
   meta_description?: string | null;
   category?: string | null;
   tags?: string[];
+  author_slug?: string | null;
   author_name?: string;
   author_url?: string | null;
   slug?: string;
@@ -154,6 +156,7 @@ export function validateCreate(body: unknown): ValidationResult<ArticleCreateInp
     category: isNonEmptyString(b.category) ? b.category.trim() : undefined,
     tags: Array.isArray(b.tags) ? (b.tags as string[]) : undefined,
     author_name: isNonEmptyString(b.author_name) ? b.author_name.trim() : undefined,
+    author_slug: isNonEmptyString(b.author_slug) ? b.author_slug.trim() : undefined,
     author_url: isNonEmptyString(b.author_url) ? b.author_url.trim() : undefined,
     slug: isNonEmptyString(b.slug) ? b.slug.trim() : undefined,
     hero_image_url: isNonEmptyString(b.hero_image_url) ? b.hero_image_url.trim() : undefined,
@@ -183,6 +186,9 @@ export function validateUpdate(body: unknown): ValidationResult<ArticleUpdateInp
       errors.push(`${key} cannot be empty`);
     }
   }
+  if (b.author_slug !== undefined && b.author_slug !== null && !isNonEmptyString(b.author_slug)) {
+    errors.push('author_slug cannot be empty');
+  }
 
   const takeaways = b.key_takeaways === null ? null : validateTakeaways(b.key_takeaways, errors);
   const faq = b.faq === null ? null : validateFaq(b.faq, errors);
@@ -203,6 +209,8 @@ export function validateUpdate(body: unknown): ValidationResult<ArticleUpdateInp
   if (b.category !== undefined)
     value.category = b.category === null ? null : (b.category as string).trim();
   if (b.tags !== undefined) value.tags = b.tags as string[];
+  if (b.author_slug !== undefined)
+    value.author_slug = b.author_slug === null ? null : (b.author_slug as string).trim();
   if (b.author_name !== undefined) value.author_name = (b.author_name as string).trim();
   if (b.author_url !== undefined)
     value.author_url = b.author_url === null ? null : (b.author_url as string).trim();

@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { env } from '~/lib/runtime-env';
 
 export const prerender = false;
 
@@ -11,9 +12,9 @@ export const prerender = false;
  *
  * Returns 404 for any other `*.txt` path so we don't leak that this route exists.
  */
-export const GET: APIRoute = ({ params, locals }) => {
+export const GET: APIRoute = ({ params }) => {
   const key = params.key;
-  const expected = locals.runtime.env.INDEXNOW_KEY;
+  const expected = env.INDEXNOW_KEY;
 
   if (!key || !expected || key !== expected) {
     return new Response('Not Found', { status: 404 });

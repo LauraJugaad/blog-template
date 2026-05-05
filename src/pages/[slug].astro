@@ -8,7 +8,7 @@ import TableOfContents from '~/components/TableOfContents.astro';
 import CtaBlock from '~/components/CtaBlock.astro';
 import AuthorBio from '~/components/AuthorBio.astro';
 import { createDb } from '~/db/client';
-import { articles, categories } from '~/db/schema';
+import { articles, authors, categories } from '~/db/schema';
 import { and, desc, eq, ne } from 'drizzle-orm';
 import { getSiteConfig } from '~/lib/site';
 import {
@@ -22,10 +22,11 @@ import { formatDate } from '~/lib/format';
 import { url } from '~/lib/paths';
 import { buildTocAndDecorate } from '~/lib/toc';
 import { isReservedSlug } from '~/lib/slug';
+import { authorHref, resolveArticleAuthor } from '~/lib/authors';
+import { env } from '~/lib/runtime-env';
 
 export const prerender = false;
 
-const env = Astro.locals.runtime.env;
 const site = getSiteConfig(env);
 const db = createDb(env.DB);
 
@@ -46,7 +47,11 @@ if (rows.length === 0) {
 const article = rows[0]!;
 
 // Pull category display name and related articles in parallel.
-const [categoryRows, related] = await Promise.all([
+const authorLookup = article.author_slug
+  ? db.select().from(authors).where(eq(authors.slug, article.author_slug)).limit(1)
+  : db.select().from(authors).where(eq(authors.name, article.author_name)).limit(1);
+
+const [categoryRows, related, authorRows] = await Promise.all([
   article.category
     ? db
         .select()
@@ -72,8 +77,11 @@ const [categoryRows, related] = await Promise.all([
         .orderBy(desc(articles.published_at))
         .limit(5)
     : Promise.resolve([]),
+  authorLookup,
 ]);
 const category = categoryRows[0];
+const articleAuthor = resolveArticleAuthor(article, authorRows[0], site);
+const articleAuthorHref = authorHref(articleAuthor);
 
 const canonicalUrl = `${site.siteUrl}/${article.slug}`;
 const tags = Array.isArray(article.tags) ? article.tags : [];
@@ -85,18 +93,24 @@ const readingTime = article.reading_time_min ?? computeReadingTime(article.conte
 // Decorate content HTML: inject ids into H2s and extract TOC.
 const { html: decoratedHtml, toc } = buildTocAndDecorate(article.content);
 
+// Breadcrumb visual usa rotas relativas (url() helper); JSON-LD usa absolutas
+// para schema.org compliance.
 const breadcrumbItems = [
-  { name: 'Início', href: site.siteUrl },
+  { name: 'Início', href: url('/'), absoluteUrl: site.siteUrl },
   ...(category
-    ? [{ name: category.name, href: `${site.siteUrl}/categoria/${category.slug}` }]
+    ? [{
+        name: category.name,
+        href: url(`/categoria/${category.slug}`),
+        absoluteUrl: `${site.siteUrl}/categoria/${category.slug}`,
+      }]
     : []),
-  { name: article.title },
+  { name: article.title, absoluteUrl: canonicalUrl },
 ];
 
 const jsonLdNodes: Record<string, unknown>[] = [
-  articleJsonLd(article, site, category?.name),
+  articleJsonLd(article, site, category?.name, articleAuthor),
   breadcrumbJsonLd(
-    breadcrumbItems.map((item) => ({ name: item.name, url: item.href })),
+    breadcrumbItems.map((item) => ({ name: item.name, url: item.absoluteUrl })),
   ),
 ];
 if (faqItems.length > 0) {
@@ -107,9 +121,8 @@ if (howToNode) {
   jsonLdNodes.push(howToNode);
 }
 
-const isDefaultAuthor = article.author_name === site.defaultAuthor.name;
 const showAuthorBio = Boolean(
-  isDefaultAuthor && (site.defaultAuthor.bio || site.defaultAuthor.avatarUrl),
+  articleAuthor.bio || articleAuthor.avatarUrl,
 );
 ---
 
@@ -124,124 +137,167 @@ const showAuthorBio = Boolean(
   jsonLd={jsonLdNodes}
   articleSection={category?.name}
   articleTags={tags}
-  articleAuthor={article.author_name}
+  articleAuthor={articleAuthor.name}
 >
-  <article class="mx-auto max-w-3xl px-4 py-10">
-    <Breadcrumb
-      items={breadcrumbItems.map((b) => ({ name: b.name, href: b.href }))}
-    />
-
-    <header class="mb-6">
-      <h1>{article.title}</h1>
-
-      {/* Summary block — primeiro chunk citável por AI Overviews.
-          A classe `summary-speakable` é alvo do SpeakableSpecification
-          emitido em Article JSON-LD. */}
-      <p
-        class="summary-speakable text-lg text-slate-700 leading-relaxed border-l-4 border-blue-500 pl-4 my-6"
-      >
-        <strong>{article.summary}</strong>
-      </p>
-
-      <div class="text-sm text-slate-500 flex flex-wrap gap-x-4 gap-y-1">
-        <span>
-          Por{' '}
-          {article.author_url ? (
-            <a href={article.author_url} rel="author">
-              {article.author_name}
-            </a>
-          ) : (
-            <span>{article.author_name}</span>
-          )}
-        </span>
-        {article.published_at && (
-          <span>
-            Publicado em{' '}
-            <time datetime={article.published_at}>
-              {formatDate(article.published_at, site.siteLang)}
-            </time>
-          </span>
-        )}
-        {article.updated_at && article.updated_at !== article.published_at && (
-          <span>
-            Atualizado em{' '}
-            <time datetime={article.updated_at}>
-              {formatDate(article.updated_at, site.siteLang)}
-            </time>
-          </span>
-        )}
-        {readingTime > 0 && (
-          <span aria-label="Tempo estimado de leitura">⏱ {readingTime} min de leitura</span>
-        )}
-      </div>
-    </header>
-
-    <AiShareButtons url={canonicalUrl} brand={site.siteName} />
-
-    {article.hero_image_url && (
-      <figure class="my-6">
-        <img
-          src={article.hero_image_url}
-          alt={article.title}
-          loading="eager"
-          decoding="async"
-          class="w-full rounded-lg border border-slate-200"
+  <article class="mx-auto max-w-[var(--layout-max)] px-4 py-12 sm:px-6">
+    <div class="lg:grid lg:grid-cols-[minmax(0,var(--reading-column))_16rem] lg:items-start lg:gap-12">
+      <div class="min-w-0">
+        <Breadcrumb
+          items={breadcrumbItems.map((b) => ({ name: b.name, href: b.href }))}
         />
-      </figure>
-    )}
 
-    {keyTakeaways.length > 0 && <KeyTakeaways items={keyTakeaways} />}
+        <header class="mb-8">
+          {category && (
+            <a
+              href={url(`/categoria/${category.slug}`)}
+              class="mb-4 inline-flex rounded-full bg-surface-muted px-3 py-1 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-primary no-underline hover:bg-primary-soft hover:no-underline"
+            >
+              {category.name}
+            </a>
+          )}
 
-    <CtaBlock
-      variant="soft"
-      headline="Precisa disso implementado na sua operação?"
-      body={`A ${site.org.name} ajuda empresas a transformar IA aplicada e automação em vantagem competitiva real.`}
-      href={site.org.url}
-      label={`Fale com a ${site.org.name}`}
-    />
+          <h1 class="mb-6 font-display text-5xl font-bold leading-[1.05] tracking-normal text-foreground md:text-6xl">
+            {article.title}
+          </h1>
 
-    {toc.length >= 3 && <TableOfContents items={toc} />}
+          {/* Summary block: primeiro chunk citável por AI Overviews.
+              A classe `summary-speakable` é alvo do SpeakableSpecification
+              emitido em Article JSON-LD. */}
+          <p class="summary-speakable my-6 border-l-4 border-primary pl-5 font-prose text-2xl leading-[1.45] text-foreground">
+            <strong>{article.summary}</strong>
+          </p>
 
-    <div class="content max-w-none" set:html={decoratedHtml} />
+          <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+            <span>
+              Por{' '}
+              {articleAuthorHref ? (
+                <a href={articleAuthorHref} rel="author" class="font-medium text-foreground no-underline hover:no-underline">
+                  {articleAuthor.name}
+                </a>
+              ) : (
+                <span class="font-medium text-foreground">{articleAuthor.name}</span>
+              )}
+            </span>
+            {article.published_at && (
+              <span>
+                Publicado em{' '}
+                <time datetime={article.published_at}>
+                  {formatDate(article.published_at, site.siteLang)}
+                </time>
+              </span>
+            )}
+            {article.updated_at && article.updated_at !== article.published_at && (
+              <span>
+                Atualizado em{' '}
+                <time datetime={article.updated_at}>
+                  {formatDate(article.updated_at, site.siteLang)}
+                </time>
+              </span>
+            )}
+          </div>
 
-    {tags.length > 0 && (
-      <div class="mt-8 flex flex-wrap gap-2">
-        {tags.map((tag) => (
-          <span class="inline-block rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">
-            #{tag}
-          </span>
-        ))}
-      </div>
-    )}
-
-    {showAuthorBio && (
-      <AuthorBio
-        name={site.defaultAuthor.name}
-        url={site.defaultAuthor.url}
-        jobTitle={site.defaultAuthor.jobTitle}
-        bio={site.defaultAuthor.bio}
-        avatarUrl={site.defaultAuthor.avatarUrl}
-        credentials={site.defaultAuthor.credentials}
-        sameAs={site.defaultAuthor.sameAs}
-      />
-    )}
-
-    {faqItems.length > 0 && <FaqBlock items={faqItems} />}
-
-    {related.length > 0 && (
-      <aside class="mt-12 border-t border-slate-200 pt-8">
-        <h2 class="text-xl font-semibold mb-4">Artigos relacionados</h2>
-        <ul class="space-y-3">
-          {related.map((r) => (
-            <li>
-              <a href={url(`/${r.slug}`)} class="font-medium">
-                {r.title}
+          <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2 border-y border-border-hairline py-3 text-sm text-muted">
+            {readingTime > 0 && (
+              <span aria-label="Tempo estimado de leitura">{readingTime} min de leitura</span>
+            )}
+            <span>{site.siteName}</span>
+            <div class="ml-auto flex items-center gap-2">
+              {toc.length >= 3 && (
+                <a href="#toc" class="rounded-full px-3 py-1 no-underline hover:bg-surface-muted hover:no-underline">
+                  Sumário
+                </a>
+              )}
+              <a href="#ai-share" class="rounded-full px-3 py-1 no-underline hover:bg-surface-muted hover:no-underline">
+                Resumir com IA
               </a>
-              <p class="text-sm text-slate-600 mt-1">{r.summary}</p>
-            </li>
-          ))}
-        </ul>
-      </aside>
-    )}
+            </div>
+          </div>
+        </header>
+
+        {heroImage && (
+          <figure class="my-8 overflow-hidden rounded-md border border-border-hairline bg-surface-muted">
+            <img
+              src={heroImage}
+              alt={article.title}
+              width="1200"
+              height="675"
+              loading="eager"
+              decoding="async"
+              class="aspect-[16/9] w-full object-cover"
+            />
+          </figure>
+        )}
+
+        {keyTakeaways.length > 0 && <KeyTakeaways items={keyTakeaways} />}
+
+        <div id="ai-share">
+          <AiShareButtons url={canonicalUrl} brand={site.siteName} />
+        </div>
+
+        {toc.length >= 3 && (
+          <div class="lg:hidden">
+            <TableOfContents items={toc} />
+          </div>
+        )}
+
+        <div class="content max-w-[var(--reading-column)]" set:html={decoratedHtml} />
+
+        {tags.length > 0 && (
+          <div class="mt-10 flex flex-wrap gap-2" aria-label="Tópicos">
+            {tags.map((tag) => (
+              <span class="inline-block rounded-full bg-surface-muted px-3 py-1 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-muted">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {faqItems.length > 0 && <FaqBlock items={faqItems} />}
+
+        {showAuthorBio && (
+          <AuthorBio
+            name={articleAuthor.name}
+            url={articleAuthorHref}
+            jobTitle={articleAuthor.jobTitle}
+            bio={articleAuthor.bio}
+            avatarUrl={articleAuthor.avatarUrl}
+            credentials={articleAuthor.credentials}
+            sameAs={articleAuthor.sameAs}
+          />
+        )}
+
+        {related.length > 0 && (
+          <aside class="mt-12 border-t border-border-hairline pt-8">
+            <h2 class="mb-5 font-prose text-3xl font-bold leading-tight text-foreground">
+              Artigos relacionados
+            </h2>
+            <ul class="space-y-5">
+              {related.map((r) => (
+                <li>
+                  <a href={url(`/${r.slug}`)} class="font-prose text-xl font-bold leading-tight text-foreground no-underline hover:text-primary-muted hover:no-underline">
+                    {r.title}
+                  </a>
+                  <p class="mt-2 text-sm leading-6 text-muted">{r.summary}</p>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
+
+        <CtaBlock
+          variant="strong"
+          headline="Precisa disso implementado na sua operação?"
+          body={`A ${site.org.name} ajuda empresas a transformar IA aplicada e automação em vantagem competitiva real.`}
+          href={site.org.url}
+          label={`Fale com a ${site.org.name}`}
+        />
+      </div>
+
+      {toc.length >= 3 && (
+        <aside class="sticky top-24 hidden lg:block">
+          <TableOfContents items={toc} />
+        </aside>
+      )}
+    </div>
   </article>
 </Base>

@@ -8,6 +8,10 @@
  */
 const RESERVED_SLUGS = new Set([
   'artigos',
+  'autor',
+  'autores',
+  'author',
+  'authors',
   'categoria',
   'tag',
   'busca',

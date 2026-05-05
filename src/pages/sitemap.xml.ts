@@ -1,7 +1,8 @@
 import type { APIRoute } from 'astro';
+import { env } from '~/lib/runtime-env';
 import { desc, eq } from 'drizzle-orm';
 import { createDb } from '~/db/client';
-import { articles, categories } from '~/db/schema';
+import { articles, authors, categories } from '~/db/schema';
 import { getSiteConfig } from '~/lib/site';
 
 export const prerender = false;
@@ -15,13 +16,12 @@ function escape(str: string): string {
     .replace(/'/g, '&apos;');
 }
 
-export const GET: APIRoute = async ({ locals }) => {
-  const env = locals.runtime.env;
+export const GET: APIRoute = async () => {
   const site = getSiteConfig(env);
   const siteUrl = site.siteUrl;
   const db = createDb(env.DB);
 
-  const [allArticles, allCategories] = await Promise.all([
+  const [allArticles, allCategories, allAuthors] = await Promise.all([
     db
       .select({
         slug: articles.slug,
@@ -33,6 +33,10 @@ export const GET: APIRoute = async ({ locals }) => {
       .where(eq(articles.status, 'published'))
       .orderBy(desc(articles.published_at)),
     db.select({ slug: categories.slug }).from(categories),
+    db
+      .select({ slug: authors.slug, updated_at: authors.updated_at })
+      .from(authors)
+      .where(eq(authors.status, 'active')),
   ]);
 
   const now = new Date().toISOString();
@@ -60,6 +64,15 @@ export const GET: APIRoute = async ({ locals }) => {
       lastmod: catLastmod,
       changefreq: 'weekly',
       priority: '0.7',
+    });
+  }
+
+  for (const author of allAuthors) {
+    urls.push({
+      loc: `${siteUrl}/autor/${author.slug}`,
+      lastmod: author.updated_at,
+      changefreq: 'weekly',
+      priority: '0.6',
     });
   }
 

@@ -21,6 +21,7 @@ interface Env {
   ORG_SAME_AS: string;
   ORG_DESCRIPTION: string;
   DEFAULT_AUTHOR_NAME: string;
+  DEFAULT_AUTHOR_SLUG: string;
   DEFAULT_AUTHOR_URL: string;
   DEFAULT_AUTHOR_JOB_TITLE: string;
   DEFAULT_AUTHOR_SAME_AS: string;

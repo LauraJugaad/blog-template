@@ -19,6 +19,8 @@
     "db:migrate:rating:remote": "wrangler d1 execute blog-db --remote --file=./drizzle/0002_aggregate_rating.sql",
     "db:migrate:geosquad:local": "wrangler d1 execute blog-db --local --file=./drizzle/0003_geo_squad_columns.sql",
     "db:migrate:geosquad:remote": "wrangler d1 execute blog-db --remote --file=./drizzle/0003_geo_squad_columns.sql",
+    "db:migrate:authors:local": "wrangler d1 execute blog-db --local --file=./drizzle/0004_authors.sql",
+    "db:migrate:authors:remote": "wrangler d1 execute blog-db --remote --file=./drizzle/0004_authors.sql",
     "db:seed:local": "wrangler d1 execute blog-db --local --file=./drizzle/seed.sql",
     "db:seed:remote": "wrangler d1 execute blog-db --remote --file=./drizzle/seed.sql",
     "db:seed:dev:local": "wrangler d1 execute blog-db --local --file=./drizzle/seed-dev.sql",
@@ -27,11 +29,11 @@
   "dependencies": {
     "@astrojs/cloudflare": "^13.3.1",
     "@astrojs/preact": "^5.1.2",
-    "@astrojs/tailwind": "^6.0.2",
+    "@tailwindcss/vite": "^4.1",
     "astro": "^6.2.2",
     "drizzle-orm": "^0.45.2",
     "preact": "^10.25.4",
-    "tailwindcss": "^3.4.17",
+    "tailwindcss": "^4.1",
     "ulid": "^2.3.0",
     "youtube-transcript": "^1.3.0",
     "youtubei.js": "^17.0.1"

@@ -1,18 +1,19 @@
 import type { APIRoute } from 'astro';
 import { eq, and, ne } from 'drizzle-orm';
 import { createDb } from '~/db/client';
-import { articles } from '~/db/schema';
+import { articles, authors } from '~/db/schema';
 import { isReservedSlug, slugify, uniqueSlug } from '~/lib/slug';
 import { validateUpdate } from '~/lib/article-input';
 import { badRequest, json, notFound, serverError } from '~/lib/api-response';
 import { computeReadingTime } from '~/lib/structured-data';
+import { env } from '~/lib/runtime-env';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ locals, params }) => {
+export const GET: APIRoute = async ({ params }) => {
   const slug = params.slug;
   if (!slug) return badRequest('missing slug');
-  const db = createDb(locals.runtime.env.DB);
+  const db = createDb(env.DB);
 
   const rows = await db
     .select()
@@ -24,10 +25,9 @@ export const GET: APIRoute = async ({ locals, params }) => {
   return json({ article: rows[0] });
 };
 
-export const PUT: APIRoute = async ({ locals, params, request }) => {
+export const PUT: APIRoute = async ({ params, request }) => {
   const slug = params.slug;
   if (!slug) return badRequest('missing slug');
-  const env = locals.runtime.env;
   const db = createDb(env.DB);
 
   let body: unknown;
@@ -84,8 +84,28 @@ export const PUT: APIRoute = async ({ locals, params, request }) => {
     update.meta_description = input.meta_description;
   if (input.category !== undefined) update.category = input.category;
   if (input.tags !== undefined) update.tags = input.tags;
-  if (input.author_name !== undefined) update.author_name = input.author_name;
-  if (input.author_url !== undefined) update.author_url = input.author_url;
+  if (input.author_slug !== undefined) {
+    if (input.author_slug === null) {
+      update.author_slug = null;
+    } else {
+      const authorRows = await db
+        .select()
+        .from(authors)
+        .where(and(eq(authors.slug, input.author_slug), eq(authors.status, 'active')))
+        .limit(1);
+      if (authorRows.length === 0) {
+        return badRequest(`author_slug "${input.author_slug}" does not match an active author`);
+      }
+      const author = authorRows[0]!;
+      update.author_slug = author.slug;
+      update.author_name = author.name;
+      update.author_url = author.url ?? `${env.SITE_URL.replace(/\/$/, '')}/autor/${author.slug}`;
+    }
+  }
+  if (input.author_name !== undefined && input.author_slug === undefined)
+    update.author_name = input.author_name;
+  if (input.author_url !== undefined && input.author_slug === undefined)
+    update.author_url = input.author_url;
   if (input.hero_image_url !== undefined) update.hero_image_url = input.hero_image_url;
   if (input.key_takeaways !== undefined) update.key_takeaways = input.key_takeaways;
   if (input.faq !== undefined) update.faq = input.faq;
@@ -105,10 +125,10 @@ export const PUT: APIRoute = async ({ locals, params, request }) => {
   return json({ article: updated[0] });
 };
 
-export const DELETE: APIRoute = async ({ locals, params }) => {
+export const DELETE: APIRoute = async ({ params }) => {
   const slug = params.slug;
   if (!slug) return badRequest('missing slug');
-  const db = createDb(locals.runtime.env.DB);
+  const db = createDb(env.DB);
 
   const existing = await db
     .select({ id: articles.id })

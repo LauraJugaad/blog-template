@@ -1,9 +1,9 @@
 import type { APIRoute } from 'astro';
+import { env } from '~/lib/runtime-env';
 
 export const prerender = false;
 
-export const GET: APIRoute = ({ locals }) => {
-  const env = locals.runtime.env;
+export const GET: APIRoute = () => {
   const siteUrl = env.SITE_URL.replace(/\/$/, '');
 
   const body = `User-agent: *

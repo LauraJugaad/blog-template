@@ -21,14 +21,17 @@ const { items } = Astro.props;
 ---
 
 {items && items.length >= 3 && (
-  <nav aria-label="Sumário do artigo" class="my-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+  <nav id="toc" aria-label="Sumário do artigo" class="my-6 border-y border-border-hairline py-5 lg:my-0 lg:border-y-0 lg:border-l lg:pl-5">
+    <p class="mb-3 font-mono text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-primary">
       Neste artigo
     </p>
-    <ol class="list-decimal pl-5 space-y-1 text-sm marker:text-slate-400">
-      {items.map((item) => (
-        <li>
-          <a href={`#${item.id}`} class="text-slate-700 hover:text-blue-700">
+    <ol class="space-y-2 text-sm">
+      {items.map((item, index) => (
+        <li class="grid grid-cols-[1.75rem_1fr] gap-2">
+          <span class="font-mono text-[0.68rem] font-semibold text-muted">
+            {String(index + 1).padStart(2, '0')}
+          </span>
+          <a href={`#${item.id}`} class="leading-5 text-muted no-underline hover:text-foreground hover:no-underline">
             {item.text}
           </a>
         </li>

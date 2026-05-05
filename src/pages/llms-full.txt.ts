@@ -1,8 +1,10 @@
 import type { APIRoute } from 'astro';
+import { env } from '~/lib/runtime-env';
 import { desc, eq } from 'drizzle-orm';
 import { createDb } from '~/db/client';
-import { articles, categories } from '~/db/schema';
+import { articles, authors, categories } from '~/db/schema';
 import { getSiteConfig } from '~/lib/site';
+import { resolveArticleAuthor } from '~/lib/authors';
 
 export const prerender = false;
 
@@ -50,21 +52,22 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-export const GET: APIRoute = async ({ locals }) => {
-  const env = locals.runtime.env;
+export const GET: APIRoute = async () => {
   const site = getSiteConfig(env);
   const db = createDb(env.DB);
 
-  const [published, allCategories] = await Promise.all([
+  const [published, allCategories, authorRows] = await Promise.all([
     db
       .select()
       .from(articles)
       .where(eq(articles.status, 'published'))
       .orderBy(desc(articles.published_at)),
     db.select().from(categories),
+    db.select().from(authors).where(eq(authors.status, 'active')),
   ]);
 
   const catMap = new Map(allCategories.map((c) => [c.slug, c.name]));
+  const authorRowsBySlug = new Map(authorRows.map((author) => [author.slug, author]));
 
   const lines: string[] = [];
 
@@ -95,6 +98,11 @@ export const GET: APIRoute = async ({ locals }) => {
       const url = `${site.siteUrl}/${a.slug}`;
       const catName = a.category ? catMap.get(a.category) ?? a.category : null;
       const tags = Array.isArray(a.tags) ? a.tags : [];
+      const author = resolveArticleAuthor(
+        a,
+        a.author_slug ? authorRowsBySlug.get(a.author_slug) : null,
+        site,
+      );
 
       lines.push(`## ${a.title}`);
       lines.push('');
@@ -104,7 +112,8 @@ export const GET: APIRoute = async ({ locals }) => {
       if (catName) meta.push(`Category: ${catName}`);
       if (a.published_at) meta.push(`Published: ${a.published_at.slice(0, 10)}`);
       meta.push(`Lang: ${site.siteLang}`);
-      if (a.author_name) meta.push(`Author: ${a.author_name}`);
+      meta.push(`Author: ${author.name}`);
+      if (author.profileUrl) meta.push(`Author URL: ${author.profileUrl}`);
       lines.push(meta.join(' | '));
       if (tags.length > 0) {
         lines.push(`Tags: ${tags.join(', ')}`);

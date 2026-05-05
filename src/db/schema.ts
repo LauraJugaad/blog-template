@@ -7,6 +7,26 @@ export const categories = sqliteTable('categories', {
   parent_slug: text('parent_slug'),
 });
 
+export const authors = sqliteTable(
+  'authors',
+  {
+    slug: text('slug').primaryKey(),
+    name: text('name').notNull(),
+    short_bio: text('short_bio'),
+    bio: text('bio'),
+    avatar_url: text('avatar_url'),
+    url: text('url'),
+    job_title: text('job_title'),
+    same_as: text('same_as', { mode: 'json' }).$type<string[]>(),
+    credentials: text('credentials', { mode: 'json' }).$type<string[]>(),
+    knows_about: text('knows_about', { mode: 'json' }).$type<string[]>(),
+    status: text('status', { enum: ['active', 'hidden'] }).notNull().default('active'),
+    created_at: text('created_at').notNull(),
+    updated_at: text('updated_at').notNull(),
+  },
+  (table) => [index('authors_status_idx').on(table.status)],
+);
+
 export interface FaqItem {
   q: string;
   a: string;
@@ -45,6 +65,7 @@ export const articles = sqliteTable(
     content: text('content').notNull(),
     category: text('category').references(() => categories.slug),
     tags: text('tags', { mode: 'json' }).$type<string[]>(),
+    author_slug: text('author_slug').references(() => authors.slug),
     author_name: text('author_name').notNull(),
     author_url: text('author_url'),
     status: text('status', { enum: ['draft', 'published'] })
@@ -71,11 +92,14 @@ export const articles = sqliteTable(
     index('articles_status_idx').on(table.status),
     index('articles_published_at_idx').on(table.published_at),
     index('articles_category_idx').on(table.category),
+    index('articles_author_slug_idx').on(table.author_slug),
     index('articles_cluster_pillar_idx').on(table.cluster_pillar_slug),
   ],
 );
 
 export type Article = typeof articles.$inferSelect;
 export type NewArticle = typeof articles.$inferInsert;
+export type Author = typeof authors.$inferSelect;
+export type NewAuthor = typeof authors.$inferInsert;
 export type Category = typeof categories.$inferSelect;
 export type NewCategory = typeof categories.$inferInsert;

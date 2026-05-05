@@ -1,0 +1,57 @@
+---
+/**
+ * CategoryTabs — navegação de filtro por categoria, estilo Medium underline-only.
+ *
+ * Usado na home (`index.astro`) e em cada página de categoria
+ * (`categoria/[slug].astro`) para preservar o mesmo layout visual e permitir
+ * navegação lateral entre categorias sem voltar para a home.
+ *
+ * Active state via aria-current="page" + border-foreground (Medium pattern).
+ */
+import { url } from '~/lib/paths';
+
+interface Category {
+  slug: string;
+  name: string;
+}
+
+interface Props {
+  categories: Category[];
+  /** Slug da categoria ativa. undefined = aba "Todos" ativa (home). */
+  activeSlug?: string;
+}
+
+const { categories, activeSlug } = Astro.props;
+const isAllActive = !activeSlug;
+
+const tabBase = 'shrink-0 border-b-2 px-0 pb-3 no-underline transition-colors';
+const tabActive = 'border-foreground font-medium text-foreground hover:no-underline';
+const tabIdle = 'border-transparent text-muted hover:border-border hover:text-foreground hover:no-underline';
+---
+
+{categories.length > 0 && (
+  <nav
+    aria-label="Categorias"
+    class="mb-2 flex gap-8 overflow-x-auto border-b border-border-hairline text-sm text-muted"
+  >
+    <a
+      href={url('/')}
+      aria-current={isAllActive ? 'page' : undefined}
+      class={`${tabBase} ${isAllActive ? tabActive : tabIdle}`}
+    >
+      Todos
+    </a>
+    {categories.map((category) => {
+      const isActive = activeSlug === category.slug;
+      return (
+        <a
+          href={url(`/categoria/${category.slug}`)}
+          aria-current={isActive ? 'page' : undefined}
+          class={`${tabBase} ${isActive ? tabActive : tabIdle}`}
+        >
+          {category.name}
+        </a>
+      );
+    })}
+  </nav>
+)}

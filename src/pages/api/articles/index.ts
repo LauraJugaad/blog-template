@@ -2,20 +2,21 @@ import type { APIRoute } from 'astro';
 import { ulid } from 'ulid';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { createDb } from '~/db/client';
-import { articles } from '~/db/schema';
+import { articles, authors } from '~/db/schema';
 import { isReservedSlug, slugify, uniqueSlug } from '~/lib/slug';
 import { validateCreate } from '~/lib/article-input';
 import { badRequest, json, methodNotAllowed, serverError } from '~/lib/api-response';
 import { computeReadingTime } from '~/lib/structured-data';
+import { env } from '~/lib/runtime-env';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ locals, url }) => {
-  const env = locals.runtime.env;
+export const GET: APIRoute = async ({ url }) => {
   const db = createDb(env.DB);
 
   const status = url.searchParams.get('status'); // optional: draft|published
   const category = url.searchParams.get('category');
+  const authorSlug = url.searchParams.get('author_slug') ?? url.searchParams.get('author');
   const page = Math.max(1, Number(url.searchParams.get('page') ?? '1'));
   const limit = Math.min(100, Math.max(1, Number(url.searchParams.get('limit') ?? '20')));
   const offset = (page - 1) * limit;
@@ -26,6 +27,9 @@ export const GET: APIRoute = async ({ locals, url }) => {
   }
   if (category) {
     conditions.push(eq(articles.category, category));
+  }
+  if (authorSlug) {
+    conditions.push(eq(articles.author_slug, authorSlug));
   }
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -51,8 +55,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
   });
 };
 
-export const POST: APIRoute = async ({ locals, request }) => {
-  const env = locals.runtime.env;
+export const POST: APIRoute = async ({ request }) => {
   const db = createDb(env.DB);
 
   let body: unknown;
@@ -87,6 +90,25 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   const now = new Date().toISOString();
   const id = ulid();
+  const requestedAuthorSlug = input.author_slug ?? env.DEFAULT_AUTHOR_SLUG;
+  let authorSlug: string | null = null;
+  let authorName = input.author_name ?? env.DEFAULT_AUTHOR_NAME;
+  let authorUrl = input.author_url ?? env.DEFAULT_AUTHOR_URL;
+
+  if (requestedAuthorSlug) {
+    const authorRows = await db
+      .select()
+      .from(authors)
+      .where(and(eq(authors.slug, requestedAuthorSlug), eq(authors.status, 'active')))
+      .limit(1);
+    if (authorRows.length === 0) {
+      return badRequest(`author_slug "${requestedAuthorSlug}" does not match an active author`);
+    }
+    const author = authorRows[0]!;
+    authorSlug = author.slug;
+    authorName = author.name;
+    authorUrl = author.url ?? `${env.SITE_URL.replace(/\/$/, '')}/autor/${author.slug}`;
+  }
 
   try {
     await db.insert(articles).values({
@@ -99,8 +121,9 @@ export const POST: APIRoute = async ({ locals, request }) => {
       content: input.content,
       category: input.category ?? null,
       tags: input.tags ?? [],
-      author_name: input.author_name ?? env.DEFAULT_AUTHOR_NAME,
-      author_url: input.author_url ?? env.DEFAULT_AUTHOR_URL,
+      author_slug: authorSlug,
+      author_name: authorName,
+      author_url: authorUrl,
       status: 'draft',
       published_at: null,
       updated_at: now,

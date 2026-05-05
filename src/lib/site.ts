@@ -25,6 +25,7 @@ export interface SiteConfig {
     knowsAbout: string[];
   };
   defaultAuthor: {
+    slug: string;
     name: string;
     url: string;
     jobTitle: string;
@@ -80,6 +81,7 @@ export function getSiteConfig(env: Env): SiteConfig {
       knowsAbout: parsePipeList(env.ORG_KNOWS_ABOUT),
     },
     defaultAuthor: {
+      slug: env.DEFAULT_AUTHOR_SLUG ?? '',
       name: env.DEFAULT_AUTHOR_NAME,
       url: env.DEFAULT_AUTHOR_URL,
       jobTitle: env.DEFAULT_AUTHOR_JOB_TITLE ?? '',

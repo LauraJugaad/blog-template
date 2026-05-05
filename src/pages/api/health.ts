@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { sql } from 'drizzle-orm';
 import { createDb } from '~/db/client';
+import { env } from '~/lib/runtime-env';
 
 export const prerender = false;
 
@@ -19,8 +20,7 @@ export const prerender = false;
  *   { ok: true, status: "healthy", checks: { db: "up" }, lang, ts }
  *   { ok: false, status: "unhealthy", checks: { db: "down" }, error?, ts }
  */
-export const GET: APIRoute = async ({ locals }) => {
-  const env = locals.runtime.env;
+export const GET: APIRoute = async () => {
   const ts = new Date().toISOString();
 
   const result: {

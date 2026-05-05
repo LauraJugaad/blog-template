@@ -3,6 +3,7 @@ import { and, desc, eq, like, or, sql } from 'drizzle-orm';
 import { createDb } from '~/db/client';
 import { articles } from '~/db/schema';
 import { json } from '~/lib/api-response';
+import { env } from '~/lib/runtime-env';
 
 export const prerender = false;
 
@@ -13,8 +14,7 @@ export const prerender = false;
  * across title, summary and content. Sufficient for thousands of articles; when
  * the corpus grows past ~20k we should switch to D1 FTS5 or Vectorize.
  */
-export const GET: APIRoute = async ({ locals, url }) => {
-  const env = locals.runtime.env;
+export const GET: APIRoute = async ({ url }) => {
   const db = createDb(env.DB);
 
   const rawQ = url.searchParams.get('q')?.trim() ?? '';

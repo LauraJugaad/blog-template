@@ -30,16 +30,15 @@ pré-preenchido e identidade de marca via `wrangler.toml`. Ver:
 - **Runtime:** Cloudflare Workers (edge SSR)
 - **Framework:** Astro 6.2 (`output: 'server'`) com `@astrojs/cloudflare` adapter
 - **Database:** Cloudflare D1 (SQLite na edge) via Drizzle ORM
-- **UI:** Tailwind CSS 3 + Preact (única ilha: busca)
+- **UI:** Tailwind CSS 4 (CSS-first config via `@theme inline`) + Preact (única ilha: busca)
 - **Linguagem:** TypeScript strict (`~/` = `src/`)
 - **Package manager:** Bun (root `bun.lock` é o SOT; não usar `npm install`)
 - **Idioma:** definido per-fork via `SITE_LANG` em `wrangler.toml` (BCP 47, ex: `pt-BR`, `en-US`, `es-ES`). Nunca hardcoded em código (per ADR-023).
 
 ## Tech-Debt Reconhecido
 
-- **Tailwind 3 + `@astrojs/tailwind`** é deprecated em Astro 6. Migração para Tailwind 4 + `@tailwindcss/vite` é EPIC futuro (ver ADR-024).
 - **CSP API nativa** do Astro 6 ainda não habilitada — adicionar em sprint dedicado.
-- **Built-in Fonts API** do Astro 6 ainda não usada — substitui `<link rel="preload">` manual.
+- **Built-in Fonts API** do Astro 6 ainda não usada — substitui `<link rel="preload">` manual (hoje Google Fonts via `<link>`).
 
 ## Comandos
 

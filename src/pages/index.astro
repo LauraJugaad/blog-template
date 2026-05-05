@@ -1,18 +1,19 @@
 ---
 import Base from '~/layouts/Base.astro';
 import ArticleCard from '~/components/ArticleCard.astro';
+import CategoryTabs from '~/components/CategoryTabs.astro';
 import Pagination from '~/components/Pagination.astro';
-import SearchIsland from '~/components/SearchIsland.tsx';
 import { createDb } from '~/db/client';
-import { articles } from '~/db/schema';
-import { desc, eq, sql } from 'drizzle-orm';
+import { articles, authors, categories } from '~/db/schema';
+import { asc, desc, eq, sql } from 'drizzle-orm';
 import { getSiteConfig } from '~/lib/site';
 import { url } from '~/lib/paths';
 import { parsePage, parsePageSize } from '~/lib/pagination';
+import { resolveArticleAuthor } from '~/lib/authors';
+import { env } from '~/lib/runtime-env';
 
 export const prerender = false;
 
-const env = Astro.locals.runtime.env;
 const site = getSiteConfig(env);
 const db = createDb(env.DB);
 
@@ -20,7 +21,7 @@ const limit = parsePageSize(Astro.url.searchParams.get('limit'));
 const page = parsePage(Astro.url.searchParams.get('page'));
 const offset = (page - 1) * limit;
 
-const [items, totalRow] = await Promise.all([
+const [items, totalRow, authorRows, categoryRows] = await Promise.all([
   db
     .select({
       slug: articles.slug,
@@ -28,7 +29,10 @@ const [items, totalRow] = await Promise.all([
       summary: articles.summary,
       category: articles.category,
       published_at: articles.published_at,
+      author_slug: articles.author_slug,
       author_name: articles.author_name,
+      hero_image_url: articles.hero_image_url,
+      reading_time_min: articles.reading_time_min,
     })
     .from(articles)
     .where(eq(articles.status, 'published'))
@@ -39,7 +43,23 @@ const [items, totalRow] = await Promise.all([
     .select({ count: sql<number>`count(*)` })
     .from(articles)
     .where(eq(articles.status, 'published')),
+  db.select().from(authors).where(eq(authors.status, 'active')),
+  db
+    .select({
+      slug: categories.slug,
+      name: categories.name,
+    })
+    .from(categories)
+    .orderBy(asc(categories.name))
+    .limit(6),
 ]);
+const authorRowsBySlug = new Map(authorRows.map((author) => [author.slug, author]));
+const authorFor = (article: (typeof items)[number]) =>
+  resolveArticleAuthor(
+    article,
+    article.author_slug ? authorRowsBySlug.get(article.author_slug) : null,
+    site,
+  );
 const total = totalRow[0]?.count ?? 0;
 ---
 
@@ -47,21 +67,21 @@ const total = totalRow[0]?.count ?? 0;
   title={`${site.siteName} — ${site.siteDescription}`}
   description={site.siteDescription}
 >
-  <section class="mx-auto max-w-4xl px-4 py-10">
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold tracking-tight mb-2">{site.siteName}</h1>
-      <p class="text-slate-600">{site.siteDescription}</p>
-    </div>
+  <section class="mx-auto max-w-[var(--reading-column)] px-4 py-12 sm:px-6">
+    <header class="mb-8">
+      <h1 class="mb-3 font-display text-5xl font-bold leading-none tracking-normal text-foreground">
+        {site.siteName}
+      </h1>
+      <p class="max-w-xl text-lg leading-8 text-muted">{site.siteDescription}</p>
+    </header>
 
-    <div class="mb-8">
-      <SearchIsland client:visible />
-    </div>
+    <CategoryTabs categories={categoryRows} />
 
     {items.length === 0 ? (
-      <p class="text-slate-500">Nenhum artigo publicado ainda.</p>
+      <p class="py-10 text-muted">Nenhum artigo publicado ainda.</p>
     ) : (
       <div>
-        {items.map((article) => <ArticleCard article={article} />)}
+        {items.map((article) => <ArticleCard article={article} author={authorFor(article)} />)}
       </div>
     )}
 

@@ -76,32 +76,32 @@ export default function SearchIsland() {
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         autoComplete="off"
-        class="w-full rounded-md border border-slate-300 bg-white px-4 py-2 text-base shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+        class="h-10 w-full rounded-full border border-transparent bg-surface-muted px-4 text-sm text-foreground shadow-none outline-hidden transition-colors placeholder:text-muted hover:bg-surface-soft focus:border-foreground focus:bg-background"
       />
 
       {open && q.trim().length >= 2 && (
-        <div class="absolute z-10 mt-2 w-full rounded-md border border-slate-200 bg-white shadow-lg">
-          {loading && <div class="px-4 py-3 text-sm text-slate-500">Buscando…</div>}
+        <div class="absolute z-10 mt-2 w-full min-w-80 rounded-md border border-border bg-background shadow-lg">
+          {loading && <div class="px-4 py-3 text-sm text-muted">Buscando...</div>}
           {!loading && results.length === 0 && (
-            <div class="px-4 py-3 text-sm text-slate-500">Nenhum resultado.</div>
+            <div class="px-4 py-3 text-sm text-muted">Nenhum resultado.</div>
           )}
           {!loading && results.length > 0 && (
             <>
-              <ul class="max-h-96 overflow-y-auto divide-y divide-slate-100">
+              <ul class="max-h-96 overflow-y-auto divide-y divide-border-hairline">
                 {results.map((r) => (
                   <li key={r.slug}>
                     <a
                       href={url(`/${r.slug}`)}
-                      class="block px-4 py-3 hover:bg-slate-50 no-underline"
+                      class="block px-4 py-3 no-underline hover:bg-surface-muted hover:no-underline"
                     >
-                      <div class="text-sm font-semibold text-slate-900">{r.title}</div>
-                      <div class="text-xs text-slate-600 mt-0.5 line-clamp-2">{r.summary}</div>
+                      <div class="text-sm font-semibold text-foreground">{r.title}</div>
+                      <div class="mt-0.5 line-clamp-2 text-xs text-muted">{r.summary}</div>
                     </a>
                   </li>
                 ))}
               </ul>
               {total > results.length && (
-                <div class="px-4 py-2 text-xs text-slate-500 border-t border-slate-100">
+                <div class="border-t border-border-hairline px-4 py-2 text-xs text-muted">
                   Mostrando {results.length} de {total} resultados
                 </div>
               )}

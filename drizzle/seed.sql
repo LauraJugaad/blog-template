@@ -14,3 +14,22 @@ INSERT OR IGNORE INTO categories (slug, name, description, parent_slug) VALUES
   ('tutoriais', 'Tutoriais', 'Guias passo a passo para implementar tecnologias modernas.', NULL),
   ('arquitetura', 'Arquitetura', 'Decisões de design, padrões e infraestrutura para sistemas modernos.', NULL),
   ('novidades', 'Novidades', 'Lançamentos, atualizações e tendências do ecossistema de tecnologia.', NULL);
+
+INSERT OR IGNORE INTO authors (
+  slug, name, short_bio, bio, avatar_url, url, job_title,
+  same_as, credentials, knows_about, status, created_at, updated_at
+) VALUES (
+  'equipe-editorial',
+  'Equipe Editorial',
+  'Equipe responsável pela curadoria e publicação do blog.',
+  'Equipe responsável pela curadoria, revisão e publicação de artigos técnicos no blog.',
+  NULL,
+  NULL,
+  'Equipe Editorial',
+  '[]',
+  '[]',
+  '["Conteúdo técnico","SEO","IA aplicada"]',
+  'active',
+  '2026-05-05T00:00:00.000Z',
+  '2026-05-05T00:00:00.000Z'
+);

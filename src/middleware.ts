@@ -1,6 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { isAuthorized, unauthorized } from './lib/auth';
 import { url } from './lib/paths';
+import { env } from './lib/runtime-env';
 
 const API_PREFIX = url('/api/');
 const SEARCH_PREFIX = url('/api/search');
@@ -9,7 +10,6 @@ const LEGACY_ARTICLE_PREFIX = url('/artigos/');
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { host, pathname, search } = context.url;
-  const env = context.locals.runtime?.env;
 
   // Canonicalize host: if SITE_URL points to apex but request came in on www
   // (or any other variant of the same registrable domain), 301 to the canonical host.

@@ -1,4 +1,5 @@
 import type { Article, FaqItem } from '../db/schema';
+import type { PublicAuthor } from './authors';
 
 interface OrgInfo {
   name: string;
@@ -10,6 +11,7 @@ interface OrgInfo {
 }
 
 interface AuthorInfo {
+  slug?: string;
   name: string;
   url?: string | null;
   jobTitle?: string;
@@ -40,26 +42,53 @@ function countWords(html: string): number {
   return text.split(/\s+/).filter(Boolean).length;
 }
 
-export function articleJsonLd(article: Article, site: SiteInfo, categoryName?: string): Record<string, unknown> {
+function personNodeFromPublicAuthor(author: PublicAuthor): Record<string, unknown> {
+  const node: Record<string, unknown> = {
+    '@type': 'Person',
+    name: author.name,
+  };
+  const publicUrl = author.profileUrl || author.url;
+  if (publicUrl) {
+    node.url = publicUrl;
+    if (author.profileUrl) node['@id'] = `${author.profileUrl}#person`;
+  }
+  if (author.jobTitle) node.jobTitle = author.jobTitle;
+  if (author.sameAs.length > 0) node.sameAs = author.sameAs;
+  if (author.avatarUrl) node.image = author.avatarUrl;
+  if (author.bio) node.description = author.bio;
+  if (author.knowsAbout.length > 0) node.knowsAbout = author.knowsAbout;
+  return node;
+}
+
+export function articleJsonLd(
+  article: Article,
+  site: SiteInfo,
+  categoryName?: string,
+  resolvedAuthor?: PublicAuthor,
+): Record<string, unknown> {
   const url = `${site.siteUrl}/${article.slug}`;
   const image = article.hero_image_url || site.defaultHeroImageUrl;
   const wordCount = countWords(article.content);
   const tags = Array.isArray(article.tags) ? article.tags : [];
 
-  const authorNode: Record<string, unknown> = {
-    '@type': 'Person',
-    name: article.author_name,
-  };
-  if (article.author_url) authorNode.url = article.author_url;
-  if (site.defaultAuthor.name === article.author_name) {
-    if (site.defaultAuthor.jobTitle) authorNode.jobTitle = site.defaultAuthor.jobTitle;
-    if (site.defaultAuthor.sameAs && site.defaultAuthor.sameAs.length > 0) {
-      authorNode.sameAs = site.defaultAuthor.sameAs;
-    }
-    if (site.defaultAuthor.avatarUrl) authorNode.image = site.defaultAuthor.avatarUrl;
-    if (site.defaultAuthor.bio) authorNode.description = site.defaultAuthor.bio;
-    if (site.defaultAuthor.knowsAbout && site.defaultAuthor.knowsAbout.length > 0) {
-      authorNode.knowsAbout = site.defaultAuthor.knowsAbout;
+  const authorNode: Record<string, unknown> = resolvedAuthor
+    ? personNodeFromPublicAuthor(resolvedAuthor)
+    : {
+        '@type': 'Person',
+        name: article.author_name,
+      };
+  if (!resolvedAuthor) {
+    if (article.author_url) authorNode.url = article.author_url;
+    if (site.defaultAuthor.name === article.author_name) {
+      if (site.defaultAuthor.jobTitle) authorNode.jobTitle = site.defaultAuthor.jobTitle;
+      if (site.defaultAuthor.sameAs && site.defaultAuthor.sameAs.length > 0) {
+        authorNode.sameAs = site.defaultAuthor.sameAs;
+      }
+      if (site.defaultAuthor.avatarUrl) authorNode.image = site.defaultAuthor.avatarUrl;
+      if (site.defaultAuthor.bio) authorNode.description = site.defaultAuthor.bio;
+      if (site.defaultAuthor.knowsAbout && site.defaultAuthor.knowsAbout.length > 0) {
+        authorNode.knowsAbout = site.defaultAuthor.knowsAbout;
+      }
     }
   }
 
@@ -106,6 +135,24 @@ export function articleJsonLd(article: Article, site: SiteInfo, categoryName?: s
     ...(categoryName ? { articleSection: categoryName } : {}),
     ...(tags.length > 0 ? { keywords: tags.join(', ') } : {}),
     ...(aggregateRatingNode ? { aggregateRating: aggregateRatingNode } : {}),
+  };
+}
+
+export function personJsonLd(author: PublicAuthor): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    ...personNodeFromPublicAuthor(author),
+  };
+}
+
+export function profilePageJsonLd(author: PublicAuthor, site: SiteInfo): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    name: `${author.name} — ${site.siteName}`,
+    url: author.profileUrl || author.url,
+    inLanguage: site.siteLang,
+    mainEntity: personNodeFromPublicAuthor(author),
   };
 }
 

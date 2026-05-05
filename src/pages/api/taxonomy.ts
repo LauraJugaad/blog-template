@@ -1,8 +1,9 @@
 import type { APIRoute } from 'astro';
 import { eq, sql } from 'drizzle-orm';
 import { createDb } from '~/db/client';
-import { articles, categories } from '~/db/schema';
+import { articles, authors, categories } from '~/db/schema';
 import { json } from '~/lib/api-response';
+import { env } from '~/lib/runtime-env';
 
 export const prerender = false;
 
@@ -17,8 +18,7 @@ export const prerender = false;
  * Query params:
  *   status=published   only count published articles (default: all)
  */
-export const GET: APIRoute = async ({ locals, url }) => {
-  const env = locals.runtime.env;
+export const GET: APIRoute = async ({ url }) => {
   const db = createDb(env.DB);
 
   const status = url.searchParams.get('status');
@@ -76,8 +76,19 @@ export const GET: APIRoute = async ({ locals, url }) => {
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
+  const authorsOut = await db
+    .select({
+      slug: authors.slug,
+      name: authors.name,
+      job_title: authors.job_title,
+      short_bio: authors.short_bio,
+    })
+    .from(authors)
+    .where(eq(authors.status, 'active'))
+    .orderBy(authors.name);
+
   return json(
-    { categories: categoriesOut, tags: tagsOut },
+    { categories: categoriesOut, tags: tagsOut, authors: authorsOut },
     { headers: { 'Cache-Control': 'private, max-age=30' } },
   );
 };

@@ -133,6 +133,7 @@ bun run db:migrate:local
 bun run db:migrate:geo:local
 bun run db:migrate:rating:local
 bun run db:migrate:geosquad:local
+bun run db:migrate:authors:local
 bun run db:seed:local
 # Optional for local UI smoke only:
 bun run db:seed:dev:local
@@ -160,8 +161,10 @@ bun run db:migrate:rating:local  # aggregate_rating migration (review/comparison
 bun run db:migrate:rating:remote # aggregate_rating on remote D1
 bun run db:migrate:geosquad:local  # GEO squad signal columns
 bun run db:migrate:geosquad:remote # GEO squad signal columns on remote D1
-bun run db:seed:local            # production-safe categories only
-bun run db:seed:remote           # production-safe categories only
+bun run db:migrate:authors:local   # author profiles + author_slug
+bun run db:migrate:authors:remote  # author profiles + author_slug on remote D1
+bun run db:seed:local            # production-safe categories + authors only
+bun run db:seed:remote           # production-safe categories + authors only
 bun run db:seed:dev:local        # optional demo article for local UI smoke
 bun run db:seed:dev:staging      # optional demo article for staging only; never production
 ```

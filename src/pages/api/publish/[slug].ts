@@ -5,6 +5,7 @@ import { articles } from '~/db/schema';
 import { pingIndexNow } from '~/lib/indexnow';
 import { pingGoogleSitemap } from '~/lib/ping-google';
 import { badRequest, json, notFound, serverError } from '~/lib/api-response';
+import { env, waitUntil } from '~/lib/runtime-env';
 
 export const prerender = false;
 
@@ -12,17 +13,15 @@ export const prerender = false;
  * POST /api/publish/[slug]
  *
  * Flips an article from draft to published, then fires IndexNow + Google sitemap ping
- * in the background via ctx.waitUntil so the response returns immediately.
+ * in the background via waitUntil so the response returns immediately.
  *
  * Idempotent: re-publishing an already-published article still re-pings IndexNow
  * (useful after content updates).
  */
-export const POST: APIRoute = async ({ locals, params }) => {
+export const POST: APIRoute = async ({ params }) => {
   const slug = params.slug;
   if (!slug) return badRequest('missing slug');
 
-  const env = locals.runtime.env;
-  const ctx = locals.runtime.ctx;
   const db = createDb(env.DB);
 
   const rows = await db
@@ -65,9 +64,9 @@ export const POST: APIRoute = async ({ locals, params }) => {
     ),
     pingGoogleSitemap(siteUrl),
   ]);
-  if (ctx?.waitUntil) {
-    ctx.waitUntil(pings);
-  } else {
+  try {
+    waitUntil(pings);
+  } catch {
     // Local dev: just await so logs show.
     await pings;
   }
