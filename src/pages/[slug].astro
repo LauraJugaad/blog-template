@@ -163,8 +163,9 @@ const showAuthorBio = Boolean(
 
           {/* Summary block: primeiro chunk citável por AI Overviews.
               A classe `summary-speakable` é alvo do SpeakableSpecification
-              emitido em Article JSON-LD. */}
-          <p class="summary-speakable my-5 border-l-4 border-primary pl-4 font-prose text-lg font-normal leading-[1.65] text-foreground sm:my-6 sm:pl-5 sm:text-[1.25rem] sm:leading-[1.6]">
+              emitido em Article JSON-LD. v2 (2026-05-10): card de "blindagem"
+              Sage+Caregiver — bg-surface-muted suave + border-l grossa Forest Green. */}
+          <p class="summary-speakable my-5 rounded-r-md border-l-4 border-primary bg-surface-muted/60 py-4 pl-5 pr-4 font-prose text-lg font-normal leading-[1.65] text-foreground sm:my-6 sm:py-5 sm:pl-6 sm:text-[1.25rem] sm:leading-[1.6]">
             {article.summary}
           </p>
 
@@ -229,57 +230,59 @@ const showAuthorBio = Boolean(
 
         <div class="content max-w-[var(--reading-column)]" set:html={decoratedHtml} />
 
-        {tags.length > 0 && (
-          <div class="mt-10 flex flex-wrap gap-2" aria-label="Tópicos">
-            {tags.map((tag) => (
-              <span class="inline-block rounded-full bg-surface-muted px-3 py-1 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-muted">
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {faqItems.length > 0 && <FaqBlock items={faqItems} />}
-
-        {showAuthorBio && (
-          <AuthorBio
-            name={articleAuthor.name}
-            url={articleAuthorHref}
-            jobTitle={articleAuthor.jobTitle}
-            bio={articleAuthor.bio}
-            avatarUrl={articleAuthor.avatarUrl}
-            credentials={articleAuthor.credentials}
-            sameAs={articleAuthor.sameAs}
-          />
-        )}
-
-        {related.length > 0 && (
-          <aside class="mt-12 border-t border-border-hairline pt-8">
-            <h2 class="mb-5 font-prose text-2xl font-bold leading-tight text-foreground sm:text-3xl">
-              Artigos relacionados
-            </h2>
-            <ul class="space-y-5">
-              {related.map((r) => (
-                <li>
-                  <a href={url(`/${r.slug}`)} class="font-prose text-xl font-bold leading-tight text-foreground no-underline hover:text-primary-muted hover:no-underline">
-                    {r.title}
-                  </a>
-                  <p class="mt-2 text-sm leading-6 text-muted">{r.summary}</p>
-                </li>
+        <div class="mx-auto max-w-[var(--reading-column)]">
+          {tags.length > 0 && (
+            <div class="mt-10 flex flex-wrap gap-2" aria-label="Tópicos">
+              {tags.map((tag) => (
+                <span class="inline-block rounded-full bg-surface-muted px-3 py-1 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-muted">
+                  #{tag}
+                </span>
               ))}
-            </ul>
-          </aside>
-        )}
+            </div>
+          )}
 
-        <CtaBlock
-          variant="strong"
-          headline="Precisa disso implementado na sua operação?"
-          body={`A ${site.org.name} ajuda empresas a transformar IA aplicada e automação em vantagem competitiva real.`}
-          href={site.org.url}
-          label={`Fale com a ${site.org.name}`}
-        />
+          {faqItems.length > 0 && <FaqBlock items={faqItems} />}
 
-        <SocialShareButtons url={canonicalUrl} title={article.title} />
+          {showAuthorBio && (
+            <AuthorBio
+              name={articleAuthor.name}
+              url={articleAuthorHref}
+              jobTitle={articleAuthor.jobTitle}
+              bio={articleAuthor.bio}
+              avatarUrl={articleAuthor.avatarUrl}
+              credentials={articleAuthor.credentials}
+              sameAs={articleAuthor.sameAs}
+            />
+          )}
+
+          {related.length > 0 && (
+            <aside class="mt-12 border-t border-border-hairline pt-8">
+              <h2 class="mb-5 font-prose text-2xl font-bold leading-tight text-foreground sm:text-3xl">
+                Artigos relacionados
+              </h2>
+              <ul class="space-y-5">
+                {related.map((r) => (
+                  <li>
+                    <a href={url(`/${r.slug}`)} class="font-prose text-xl font-bold leading-tight text-foreground no-underline hover:text-primary-muted hover:no-underline">
+                      {r.title}
+                    </a>
+                    <p class="mt-2 text-sm leading-6 text-muted">{r.summary}</p>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          )}
+
+          <CtaBlock
+            variant="strong"
+            headline="Quer instalar solar na sua casa sem cair em orçamento inflado?"
+            body={`A ${site.org.name} atende Campinas e Jundiaí — engenheira eletricista, 174 instalações entregues, método de blindagem do consumidor.`}
+            href={site.org.url}
+            label={`Conhecer a ${site.org.name}`}
+          />
+
+          <SocialShareButtons url={canonicalUrl} title={article.title} />
+        </div>
       </div>
 
       {toc.length >= 3 && (

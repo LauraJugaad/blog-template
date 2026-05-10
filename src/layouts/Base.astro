@@ -58,9 +58,12 @@ const allJsonLd = [...baseJsonLd, ...pageJsonLd];
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light dark" />
     <meta name="generator" content={Astro.generator} />
+    {/* Marker pra distinguir Astro Edge Edition do blog WP em www.solarjugaad.com.br/artigos */}
+    <meta name="x-render-engine" content="astro-cloudflare-edge" />
+    <meta name="x-blog-variant" content="edge-edition" />
     <script is:inline>
       (() => {
-        const key = 'aiox-blog-template-theme';
+        const key = 'solar-jugaad-theme';
         const root = document.documentElement;
 
         try {
@@ -136,10 +139,18 @@ const allJsonLd = [...baseJsonLd, ...pageJsonLd];
       <div class="mx-auto flex h-14 max-w-[var(--layout-max)] items-center gap-3 px-4 sm:h-16 sm:px-6 md:gap-5">
         <a
           href={url('/')}
-          class="min-w-0 max-w-[6.5rem] truncate font-display text-xl font-bold leading-none text-foreground no-underline hover:no-underline sm:max-w-none sm:text-2xl"
+          class="flex shrink-0 items-center no-underline hover:no-underline"
           aria-label={`${site.siteName} — início`}
         >
-          {site.siteName}
+          <img
+            src={url('/brand/logo-jugaad.png')}
+            alt={site.siteName}
+            width="210"
+            height="56"
+            class="h-9 w-auto sm:h-11"
+            loading="eager"
+            decoding="async"
+          />
         </a>
 
         <div class="hidden w-full max-w-sm md:block">
@@ -257,12 +268,12 @@ const allJsonLd = [...baseJsonLd, ...pageJsonLd];
           <a href={url('/sitemap.xml')} class="block no-underline hover:text-foreground hover:no-underline">Sitemap</a>
           <a href={url('/llms.txt')} class="block no-underline hover:text-foreground hover:no-underline">llms.txt</a>
         </nav>
-        <nav aria-label="AIOX" class="space-y-2">
+        <nav aria-label="Solar Jugaad" class="space-y-2">
           <p class="font-mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-foreground">
-            AIOX
+            Solar Jugaad
           </p>
           <a href={site.org.url} class="block no-underline hover:text-foreground hover:no-underline">
-            Repositório oficial
+            Site oficial
           </a>
           {site.org.sameAs.map((href) => (
             <a href={href} class="block no-underline hover:text-foreground hover:no-underline">
@@ -281,12 +292,19 @@ const allJsonLd = [...baseJsonLd, ...pageJsonLd];
             Ver {site.org.name}
           </a>
           <p>&copy; {new Date().getFullYear()} {site.siteName}</p>
+          <p class="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-2.5 py-1 font-mono text-[0.62rem] uppercase tracking-[0.1em] text-primary">
+            <span aria-hidden="true">⚡</span>
+            Edge Edition
+          </p>
+          <p class="text-[0.65rem] leading-tight text-muted">
+            Renderizado em Cloudflare Workers · Astro 6 + D1 SQLite
+          </p>
         </div>
       </div>
     </footer>
     <script is:inline>
       (() => {
-        const key = 'aiox-blog-template-theme';
+        const key = 'solar-jugaad-theme';
         const root = document.documentElement;
         const toggle = document.querySelector('[data-theme-toggle]');
         const media = window.matchMedia('(prefers-color-scheme: dark)');

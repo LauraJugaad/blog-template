@@ -25,7 +25,7 @@ export interface ArticleAuthorFields {
 
 const GENERIC_AUTHOR_NAMES = new Set([
   'Equipe Editorial',
-  'Equipe AIOX',
+  'Equipe Solar Jugaad',
   'Equipe',
   'Author Name',
 ]);
