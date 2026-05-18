@@ -1,6 +1,28 @@
 import type { APIRoute } from 'astro';
-import { ulid } from 'ulid';
 import { and, desc, eq, sql } from 'drizzle-orm';
+
+// O pacote `ulid` (npm) crasha no module-load em Cloudflare Workers:
+// a última linha do ESM (`const ulid = factory();`) dispara detectPrng()
+// que procura `window.crypto`/`require('crypto')` — nenhum disponível no
+// runtime do Worker. Reimplementação inline usa o Web Crypto nativo.
+const ENCODING = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+function ulid(): string {
+  const TIME_LEN = 10;
+  const RAND_LEN = 16;
+  let now = Date.now();
+  let timeStr = '';
+  for (let i = 0; i < TIME_LEN; i++) {
+    const mod = now % ENCODING.length;
+    timeStr = ENCODING.charAt(mod) + timeStr;
+    now = (now - mod) / ENCODING.length;
+  }
+  const randBuf = crypto.getRandomValues(new Uint8Array(RAND_LEN));
+  let randStr = '';
+  for (let i = 0; i < RAND_LEN; i++) {
+    randStr += ENCODING.charAt(randBuf[i] % ENCODING.length);
+  }
+  return timeStr + randStr;
+}
 import { createDb } from '~/db/client';
 import { articles, authors } from '~/db/schema';
 import { isReservedSlug, slugify, uniqueSlug } from '~/lib/slug';
